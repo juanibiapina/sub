@@ -2,33 +2,39 @@ extern crate itertools;
 extern crate clap;
 
 use clap::{App, Arg, AppSettings};
-use itertools::Itertools;
 
-use std::env;
-
-pub struct CLI;
+pub struct CLI {
+    alias: String,
+}
 
 impl CLI {
     pub fn new() -> CLI {
-        CLI
+        let app = App::new("sub")
+            .version(env!("CARGO_PKG_VERSION"))
+            .setting(AppSettings::ColoredHelp)
+            .setting(AppSettings::VersionlessSubcommands)
+            .setting(AppSettings::TrailingVarArg)
+            .arg(Arg::with_name("alias")
+                 .long("alias")
+                 .takes_value(true))
+            .arg(Arg::with_name("commands")
+                 .multiple(true));
+
+        let matches = app.get_matches();
+
+        CLI {
+            alias: matches.value_of("alias").unwrap_or("sub").to_owned(),
+        }
     }
 
     pub fn run(&self) {
-        let mut name = "sub".to_owned();
-
-        for (arg, value) in env::args().tuple_windows() {
-            if arg == "--alias" {
-                name = value;
-                break;
-            }
-        }
-
-        let app = App::new(name.as_ref())
-            .bin_name(name.as_ref())
+        let app = App::new(self.alias.as_ref())
+            .bin_name(self.alias.as_ref())
             .version(env!("CARGO_PKG_VERSION"))
             .setting(AppSettings::ColoredHelp)
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .setting(AppSettings::VersionlessSubcommands)
+            .setting(AppSettings::TrailingVarArg)
             .arg(Arg::with_name("alias")
                  .long("alias")
                  .takes_value(true)
