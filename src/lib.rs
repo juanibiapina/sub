@@ -16,7 +16,9 @@ impl CLI {
             .setting(AppSettings::TrailingVarArg)
             .arg(Arg::with_name("alias")
                  .long("alias")
-                 .takes_value(true))
+                 .required(true)
+                 .takes_value(true)
+                 .help("Sets the binary name"))
             .arg(Arg::with_name("commands")
                  .multiple(true));
 
