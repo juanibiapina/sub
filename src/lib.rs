@@ -26,6 +26,7 @@ impl CLI {
         let app = App::new(name.as_ref())
             .bin_name(name.as_ref())
             .version(env!("CARGO_PKG_VERSION"))
+            .setting(AppSettings::ColoredHelp)
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .arg(Arg::with_name("alias")
                  .long("alias")
