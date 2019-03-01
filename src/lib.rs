@@ -28,6 +28,7 @@ impl CLI {
             .version(env!("CARGO_PKG_VERSION"))
             .setting(AppSettings::ColoredHelp)
             .setting(AppSettings::SubcommandRequiredElseHelp)
+            .setting(AppSettings::VersionlessSubcommands)
             .arg(Arg::with_name("alias")
                  .long("alias")
                  .takes_value(true)
