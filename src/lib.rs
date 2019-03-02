@@ -72,6 +72,10 @@ impl Sub {
             for entry in fs::read_dir(self.libexec_path()).unwrap() {
                 let name = entry.unwrap().file_name().into_string().unwrap();
 
+                if name.starts_with(".") {
+                    continue;
+                }
+
                 app = app.subcommand(SubCommand::with_name(name.as_ref())
                                      .setting(AppSettings::TrailingVarArg)
                                      .setting(AppSettings::AllowLeadingHyphen)

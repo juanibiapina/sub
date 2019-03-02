@@ -12,6 +12,15 @@ load test_helper
   assert_line --partial "echo"
 }
 
+@test "subcommands: ignores hidden files" {
+  fixture
+
+  run main
+
+  assert_success
+  refute_line --partial ".hidden"
+}
+
 @test "subcommands: invokes a subcommand without arguments" {
   fixture
 
