@@ -1,0 +1,1 @@
+- remove empty OPTIONS section

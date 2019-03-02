@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+set -e
+
+$SUB_BIN --alias main --root "$0"/../..
