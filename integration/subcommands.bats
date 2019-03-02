@@ -7,7 +7,7 @@ load test_helper
 
   run main
 
-  assert_failure
+  assert_success
   assert_line "SUBCOMMANDS:"
   assert_line --partial "echo"
 }

@@ -9,36 +9,17 @@ use std::process::Command;
 use std::process::exit;
 
 pub struct CLI {
-    alias: String,
+    name: String,
     root: PathBuf,
+    args: Option<Vec<String>>,
 }
 
 impl CLI {
-    pub fn new() -> CLI {
-        let app = App::new("sub")
-            .version(env!("CARGO_PKG_VERSION"))
-            .setting(AppSettings::ColoredHelp)
-            .setting(AppSettings::VersionlessSubcommands)
-            .setting(AppSettings::AllowLeadingHyphen)
-            .setting(AppSettings::TrailingVarArg)
-            .arg(Arg::with_name("alias")
-                 .long("alias")
-                 .required(true)
-                 .takes_value(true)
-                 .help("Sets the binary name"))
-            .arg(Arg::with_name("root")
-                 .long("root")
-                 .required(true)
-                 .takes_value(true)
-                 .help("Sets the root directory"))
-            .arg(Arg::with_name("commands")
-                 .multiple(true));
-
-        let matches = app.get_matches();
-
+    pub fn new(name: &str, root: PathBuf, args: Option<Vec<String>>) -> CLI {
         CLI {
-            alias: matches.value_of("alias").unwrap().to_owned(),
-            root: fs::canonicalize(matches.value_of("root").unwrap()).unwrap(),
+            name: name.to_owned(),
+            root,
+            args,
         }
     }
 
@@ -77,20 +58,13 @@ impl CLI {
     }
 
     fn init_commands(&self) -> ArgMatches {
-        let mut app = App::new(self.alias.as_ref())
-            .bin_name(self.alias.as_ref())
+        let mut app = App::new(self.name.as_ref())
+            .bin_name(self.name.as_ref())
             .setting(AppSettings::ColoredHelp)
+            .setting(AppSettings::NoBinaryName)
             .setting(AppSettings::SubcommandRequiredElseHelp)
             .setting(AppSettings::DisableVersion)
-            .setting(AppSettings::VersionlessSubcommands)
-            .arg(Arg::with_name("alias")
-                 .long("alias")
-                 .takes_value(true)
-                 .hidden(true))
-            .arg(Arg::with_name("root")
-                 .long("root")
-                 .hidden(true)
-                 .takes_value(true));
+            .setting(AppSettings::VersionlessSubcommands);
 
         let libexec_path = self.libexec_path();
 
@@ -107,7 +81,12 @@ impl CLI {
             }
         }
 
-        app.get_matches()
+        if self.args.is_none() {
+            app.print_help().unwrap();
+            exit(0);
+        }
+
+        app.get_matches_from(self.args.as_ref().unwrap())
     }
 
 }
