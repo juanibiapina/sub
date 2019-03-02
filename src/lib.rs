@@ -102,6 +102,7 @@ impl CLI {
                                      .setting(AppSettings::TrailingVarArg)
                                      .setting(AppSettings::AllowLeadingHyphen)
                                      .arg(Arg::with_name("args")
+                                          .hidden(true)
                                           .multiple(true)));
             }
         }
