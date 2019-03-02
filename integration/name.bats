@@ -3,9 +3,9 @@
 load test_helper
 
 @test "name: replaces binary name in help text" {
-  run $SUB_BIN --name thename --root . -- error
+  run $SUB_BIN --name thename --root . --
 
-  assert_failure
+  assert_success
   assert_line --partial "thename"
   refute_line --partial "sub "
 }
