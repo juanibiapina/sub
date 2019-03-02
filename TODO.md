@@ -1,3 +1,12 @@
 - remove empty OPTIONS section
 
 - only list executable files as subcommands
+- add support for nested commands as directories
+- extract documentation for file commands
+- extract documentation for directory commands
+- allow command specific completions
+- generate completions
+- improve help messages
+  - remove -h flag
+  - remove [args...] from the end of every command
+  - I might need to get rid of clap for these
