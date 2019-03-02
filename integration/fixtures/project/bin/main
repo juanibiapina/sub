@@ -2,4 +2,4 @@
 
 set -e
 
-$SUB_BIN --alias main --root "$0"/../..
+$SUB_BIN --alias main --root "$0"/../.. "$@"
