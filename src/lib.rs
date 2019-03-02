@@ -23,7 +23,7 @@ impl Sub {
         }
     }
 
-    pub fn run(&self) {
+    pub fn run(&self) -> ! {
         let matches = self.init_commands();
 
         let command_name = matches.subcommand_name().unwrap();
