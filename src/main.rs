@@ -15,9 +15,9 @@ fn main() {
     let root = fs::canonicalize(matches.value_of("root").unwrap()).unwrap();
     let args = matches.values_of("commands").and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()));
 
-    let cli = sub::CLI::new(name, root, args);
+    let sub = sub::Sub::new(name, root, args);
 
-    cli.run();
+    sub.run();
 }
 
 fn init_cli<'a, 'b>() -> App<'a, 'b> {

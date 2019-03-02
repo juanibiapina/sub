@@ -8,15 +8,15 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::process::exit;
 
-pub struct CLI {
+pub struct Sub {
     name: String,
     root: PathBuf,
     args: Option<Vec<String>>,
 }
 
-impl CLI {
-    pub fn new(name: &str, root: PathBuf, args: Option<Vec<String>>) -> CLI {
-        CLI {
+impl Sub {
+    pub fn new(name: &str, root: PathBuf, args: Option<Vec<String>>) -> Sub {
+        Sub {
             name: name.to_owned(),
             root,
             args,
