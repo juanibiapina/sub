@@ -41,6 +41,11 @@ impl Sub {
         };
         let command_name = args.pop().unwrap();
 
+        if command_name == "help" {
+            self.display_help();
+            exit(0);
+        }
+
         let command_path = self.command_path(&command_name);
 
         let mut command = Command::new(command_path);

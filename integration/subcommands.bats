@@ -2,6 +2,18 @@
 
 load test_helper
 
+@test "subcommands: without a subcommand, displays help" {
+  fixture
+
+  run main
+
+  assert_success
+  assert_line --partial "main"
+  assert_line "USAGE:"
+  assert_line "SUBCOMMANDS:"
+  assert_line --partial "echo"
+}
+
 @test "subcommands: lists files as subcommands" {
   fixture
 
