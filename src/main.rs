@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{App, Arg, AppSettings};
+use clap::{App, AppSettings, Arg};
 
 use std::fs;
 
@@ -13,7 +13,10 @@ fn main() {
 
     let name = matches.value_of("name").unwrap();
     let root = fs::canonicalize(matches.value_of("root").unwrap()).unwrap();
-    let args = matches.values_of("commands").and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()));
+    let args = matches
+        .values_of("commands")
+        .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
+        .unwrap_or(Vec::new());
 
     let sub = sub::Sub::new(name, root, args);
 

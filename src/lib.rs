@@ -1,22 +1,22 @@
-extern crate itertools;
 extern crate clap;
+extern crate itertools;
 
-use clap::{App, Arg, ArgMatches, AppSettings, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 
 use std::fs;
-use std::path::PathBuf;
-use std::process::Command;
-use std::process::exit;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
+use std::process::exit;
+use std::process::Command;
 
 pub struct Sub {
     name: String,
     root: PathBuf,
-    args: Option<Vec<String>>,
+    args: Vec<String>,
 }
 
 impl Sub {
-    pub fn new(name: &str, root: PathBuf, args: Option<Vec<String>>) -> Sub {
+    pub fn new(name: &str, root: PathBuf, args: Vec<String>) -> Sub {
         Sub {
             name: name.to_owned(),
             root,
@@ -25,18 +25,26 @@ impl Sub {
     }
 
     pub fn run(&self) -> ! {
-        let matches = self.init_commands();
+        let mut args = self.args.clone();
 
-        let command_name = matches.subcommand_name().unwrap();
+        if args.len() == 0 {
+            self.display_help();
+            exit(0);
+        }
 
-        let command_path = self.command_path(command_name);
+        let command_args = {
+            if args.len() > 1 {
+                args.drain(1..).collect()
+            } else {
+                Vec::new()
+            }
+        };
+        let command_name = args.pop().unwrap();
+
+        let command_path = self.command_path(&command_name);
 
         let mut command = Command::new(command_path);
-
-        let sub_matches = matches.subcommand_matches(command_name).unwrap();
-        if let Some(args) = sub_matches.values_of("args") {
-            command.args(args.collect::<Vec<_>>());
-        }
+        command.args(command_args);
 
         let status = command.status().unwrap();
 
@@ -46,19 +54,7 @@ impl Sub {
         }
     }
 
-    fn command_path(&self, command_name: &str) -> PathBuf {
-        let mut libexec_path = self.libexec_path();
-        libexec_path.push(command_name);
-        libexec_path
-    }
-
-    fn libexec_path(&self) -> PathBuf {
-        let mut path = self.root.clone();
-        path.push("libexec");
-        path
-    }
-
-    fn init_commands(&self) -> ArgMatches {
+    fn display_help(&self) {
         let mut app = App::new(self.name.as_ref())
             .bin_name(self.name.as_ref())
             .setting(AppSettings::ColoredHelp)
@@ -82,21 +78,29 @@ impl Sub {
                     continue;
                 }
 
-                app = app.subcommand(SubCommand::with_name(name.as_ref())
-                                     .setting(AppSettings::TrailingVarArg)
-                                     .setting(AppSettings::AllowLeadingHyphen)
-                                     .arg(Arg::with_name("args")
-                                          .hidden(true)
-                                          .multiple(true)));
+                app = app.subcommand(
+                    SubCommand::with_name(name.as_ref())
+                    .setting(AppSettings::TrailingVarArg)
+                    .setting(AppSettings::AllowLeadingHyphen)
+                    .arg(Arg::with_name("args")
+                         .hidden(true)
+                         .multiple(true)),
+                         );
             }
         }
 
-        if self.args.is_none() {
-            app.print_help().unwrap();
-            exit(0);
-        }
-
-        app.get_matches_from(self.args.as_ref().unwrap())
+        app.print_help().unwrap();
     }
 
+    fn command_path(&self, command_name: &str) -> PathBuf {
+        let mut libexec_path = self.libexec_path();
+        libexec_path.push(command_name);
+        libexec_path
+    }
+
+    fn libexec_path(&self) -> PathBuf {
+        let mut path = self.root.clone();
+        path.push("libexec");
+        path
+    }
 }
