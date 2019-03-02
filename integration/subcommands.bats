@@ -21,6 +21,15 @@ load test_helper
   refute_line --partial ".hidden"
 }
 
+@test "subcommands: ignores non executable files" {
+  fixture
+
+  run main
+
+  assert_success
+  refute_line --partial "non-exec"
+}
+
 @test "subcommands: invokes a subcommand without arguments" {
   fixture
 

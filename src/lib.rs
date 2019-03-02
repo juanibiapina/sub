@@ -7,6 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::exit;
+use std::os::unix::fs::PermissionsExt;
 
 pub struct Sub {
     name: String,
@@ -70,9 +71,14 @@ impl Sub {
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(self.libexec_path()).unwrap() {
-                let name = entry.unwrap().file_name().into_string().unwrap();
+                let entry = entry.unwrap();
+                let name = entry.file_name().into_string().unwrap();
 
                 if name.starts_with(".") {
+                    continue;
+                }
+
+                if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
                     continue;
                 }
 
