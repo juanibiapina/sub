@@ -10,10 +10,11 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{PathBuf, Path};
-use std::process::exit;
 use std::process::Command;
 
 use crate::subcommand::SubCommand;
+use crate::error::Result;
+use crate::error::Error;
 
 pub struct Engine {
     name: String,
@@ -30,10 +31,10 @@ impl Engine {
         }
     }
 
-    pub fn run(&self) -> ! {
+    pub fn run(&self) -> Result<i32> {
         if self.args.len() == 0 {
             self.display_help();
-            exit(0);
+            return Err(Error::NoSubCommand);
         }
 
         let mut args = self.args.clone();
@@ -53,14 +54,14 @@ impl Engine {
             } else {
                 self.display_help_for_command(&command_args[0]);
             }
-            exit(0);
+            return Ok(0);
         }
 
         let command_path = self.command_path(&command_name);
 
         if !command_path.exists() {
             self.display_unknown_subcommand(&command_name);
-            exit(1);
+            return Err(Error::UnknownSubCommand);
         }
 
         let mut command = Command::new(command_path);
@@ -71,8 +72,8 @@ impl Engine {
         let status = command.status().unwrap();
 
         match status.code() {
-            Some(code) => exit(code),
-            None => exit(1),
+            Some(code) => Ok(code),
+            None => Err(Error::SubCommandInterrupted),
         }
     }
 

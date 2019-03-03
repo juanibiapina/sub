@@ -5,8 +5,10 @@ extern crate clap;
 use clap::{App, AppSettings, Arg};
 
 use std::fs;
+use std::process::exit;
 
 use sub::engine::Engine;
+use sub::error::Error;
 
 fn main() {
     let app = init_cli();
@@ -22,7 +24,12 @@ fn main() {
 
     let sub = Engine::new(name, root, args);
 
-    sub.run();
+    match sub.run() {
+        Ok(code) => exit(code),
+        Err(Error::NoSubCommand) => exit(0),
+        Err(Error::SubCommandInterrupted) => exit(1),
+        Err(Error::UnknownSubCommand) => exit(1),
+    }
 }
 
 fn init_cli<'a, 'b>() -> App<'a, 'b> {
