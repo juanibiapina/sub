@@ -27,6 +27,10 @@ impl SubCommand {
             return None;
         }
 
+        if entry.path().is_dir() {
+            return None;
+        }
+
         if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
             return None;
         }

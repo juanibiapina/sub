@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Usage: main echo <args>...
+# Summary: Echo arguments
+# Help: This is a complete test script with documentation.
+#
+# The help section can span multiple lines.
+
+
+set -e
+
+# Provide completions
+if [ "$1" = "--complete" ]; then
+  echo comp1
+  echo comp2
+  exit
+fi
+
+echo "$@"
