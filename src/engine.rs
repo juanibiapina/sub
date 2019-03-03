@@ -63,7 +63,10 @@ impl Engine {
         }
 
         if command_name == "completions" {
-            // TODO display help completions when not enough arguments
+            if command_args.len() != 1 {
+                self.display_commands();
+                return Ok(0)
+            }
             return self.display_completions(&command_args[0]);
         }
 
@@ -149,8 +152,7 @@ impl Engine {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
-            println!("{}: no such sub command '{}'", self.name, command_name);
-            return Err(Error::NoSubCommand);
+            return Err(Error::UnknownSubCommand);
         }
 
         if provides_completions(&command_path) {
