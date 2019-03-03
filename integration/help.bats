@@ -23,3 +23,23 @@ load test_helper
   assert_line --partial "Echoes its arguments"
   assert_line --partial "Returns with error"
 }
+
+@test "help: displays help for a subcommand" {
+  fixture
+
+  run main help echo
+
+  assert_success
+  assert_output "This is a complete test script with documentation.
+
+The help section can span multiple lines."
+}
+
+@test "help: displays summary for subcommand if help is not available" {
+  fixture
+
+  run main help error
+
+  assert_success
+  assert_output "Returns with error"
+}

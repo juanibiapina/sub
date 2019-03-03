@@ -48,7 +48,11 @@ impl Engine {
         let command_name = args.pop().unwrap();
 
         if command_name == "help" {
-            self.display_help();
+            if command_args.len() == 0 {
+                self.display_help();
+            } else {
+                self.display_help_for_command(&command_args[0]);
+            }
             exit(0);
         }
 
@@ -91,7 +95,8 @@ impl Engine {
                 }
 
                 let summary = extract_summary(&entry.path());
-                let subcommand = SubCommand::new(name, summary);
+                let help = extract_help(&entry.path());
+                let subcommand = SubCommand::new(name, summary, help);
 
                 subcommands.push(subcommand);
             }
@@ -102,6 +107,37 @@ impl Engine {
 
     fn display_unknown_subcommand(&self, name: &str) {
         println!("{}: no such sub command '{}'", self.name, name);
+    }
+
+    fn display_help_for_command(&self, command: &str) {
+        let libexec_path = self.libexec_path();
+
+        if libexec_path.is_dir() {
+            for entry in fs::read_dir(libexec_path).unwrap() {
+                let entry = entry.unwrap();
+                let name = entry.file_name().into_string().unwrap();
+
+                if name.starts_with(".") {
+                    continue;
+                }
+
+                if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
+                    continue;
+                }
+
+                if name == command {
+                    let help = extract_help(&entry.path());
+                    if help.is_empty() {
+                        let summary = extract_summary(&entry.path());
+                        if !summary.is_empty() {
+                            println!("{}", summary);
+                        }
+                    } else {
+                        println!("{}", help);
+                    }
+                }
+            }
+        }
     }
 
     fn display_help(&self) {
@@ -146,11 +182,11 @@ impl Engine {
 fn extract_summary(path: &Path) -> String {
     let file = File::open(path).unwrap();
     lazy_static! {
-        static ref RE: Regex = Regex::new("^# Summary: (.*)$").unwrap();
+        static ref SUMMARY_RE: Regex = Regex::new("^# Summary: (.*)$").unwrap();
     }
     for line in BufReader::new(file).lines() {
         let line = line.unwrap();
-        if let Some(caps) = RE.captures(&line) {
+        if let Some(caps) = SUMMARY_RE.captures(&line) {
             if let Some(m) = caps.get(1) {
                 return m.as_str().to_owned();
             }
@@ -158,4 +194,46 @@ fn extract_summary(path: &Path) -> String {
     }
 
     "".to_owned()
+}
+
+fn extract_help(path: &Path) -> String {
+    let file = File::open(path).unwrap();
+    lazy_static! {
+        static ref HELP_RE: Regex = Regex::new("^# Help: (.*)$").unwrap();
+    }
+    lazy_static! {
+        static ref COMMENT_RE: Regex = Regex::new("^# (.*)$").unwrap();
+    }
+    let mut help_started = false;
+    let mut help = String::new();
+
+    for line in BufReader::new(file).lines() {
+        let line = line.unwrap();
+
+        if help_started {
+            if line.starts_with("#") {
+                if let Some(caps) = COMMENT_RE.captures(&line) {
+                    if let Some(m) = caps.get(1) {
+                        help.push('\n');
+                        help.push_str(m.as_str());
+                    } else {
+                        break;
+                    }
+                } else {
+                    help.push('\n');
+                }
+            } else {
+                break;
+            }
+        } else {
+            if let Some(caps) = HELP_RE.captures(&line) {
+                if let Some(m) = caps.get(1) {
+                    help_started = true;
+                    help.push_str(m.as_str());
+                }
+            }
+        }
+    }
+
+    help
 }

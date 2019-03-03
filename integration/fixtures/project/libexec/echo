@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Summary: Echoes its arguments
+# Help: This is a complete test script with documentation.
+#
+# The help section can span multiple lines.
 
 set -e
 
