@@ -62,6 +62,12 @@ impl Engine {
             return Ok(0);
         }
 
+        if command_name == "completions" {
+            // TODO display help completions when not enough arguments
+            self.display_completions(&command_args[0]);
+            return Ok(0);
+        }
+
         let command_path = self.command_path(&command_name);
 
         if !command_path.exists() {
@@ -137,6 +143,25 @@ impl Engine {
             }
         } else {
             println!("{}", help);
+        }
+    }
+
+    fn display_completions(&self, command_name: &str) {
+        let command_path = self.command_path(command_name);
+
+        if !command_path.exists() {
+            println!("{}: no such sub command '{}'", self.name, command_name);
+            return // TODO return correct error here
+        }
+
+        if provides_completions(&command_path) {
+            let mut command = Command::new(command_path);
+
+            command.arg("--complete");
+            command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
+
+            command.status().unwrap();
+            // TODO return status
         }
     }
 
@@ -267,3 +292,17 @@ fn extract_help(path: &Path) -> String {
 
     help
 }
+
+fn provides_completions(path: &Path) -> bool {
+    let file = File::open(path).unwrap();
+
+    for line in BufReader::new(file).lines() {
+        let line = line.unwrap();
+        if line == "# Provide completions" {
+            return true;
+        }
+    }
+
+    false
+}
+

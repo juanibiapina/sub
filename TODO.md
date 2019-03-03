@@ -8,7 +8,6 @@
   - extract documentation
   - add support for nested help
   - add support for nested commands
-- allow command specific completions
 - generate completions
 
 # Tests
