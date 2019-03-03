@@ -16,21 +16,21 @@ pub struct Sub {
 }
 
 impl Sub {
-    pub fn new(name: &str, root: PathBuf, args: Vec<String>) -> Sub {
+    pub fn new(name: String, root: PathBuf, args: Vec<String>) -> Sub {
         Sub {
-            name: name.to_owned(),
+            name,
             root,
             args,
         }
     }
 
     pub fn run(&self) -> ! {
-        let mut args = self.args.clone();
-
-        if args.len() == 0 {
+        if self.args.len() == 0 {
             self.display_help();
             exit(0);
         }
+
+        let mut args = self.args.clone();
 
         let command_args = {
             if args.len() > 1 {

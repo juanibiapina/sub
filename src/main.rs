@@ -11,7 +11,7 @@ fn main() {
 
     let matches = app.get_matches();
 
-    let name = matches.value_of("name").unwrap();
+    let name = matches.value_of("name").unwrap().to_owned();
     let root = fs::canonicalize(matches.value_of("root").unwrap()).unwrap();
     let args = matches
         .values_of("commands")
