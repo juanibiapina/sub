@@ -76,3 +76,12 @@ load test_helper
 
   assert_failure 4
 }
+
+@test "subcommands: handles non existent commands gracefully" {
+  fixture
+
+  run main not-found
+
+  assert_failure
+  assert_output "main: no such sub command 'not-found'"
+}

@@ -1,7 +1,6 @@
 # Bugs
 
 - remove empty OPTIONS section
-- exploding when subcommand is not found
 
 # Features
 

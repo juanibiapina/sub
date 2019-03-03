@@ -54,6 +54,11 @@ impl Engine {
 
         let command_path = self.command_path(&command_name);
 
+        if !command_path.exists() {
+            self.display_unknown_subcommand(&command_name);
+            exit(1);
+        }
+
         let mut command = Command::new(command_path);
         command.args(command_args);
 
@@ -91,6 +96,10 @@ impl Engine {
         }
 
         subcommands
+    }
+
+    fn display_unknown_subcommand(&self, name: &str) {
+        println!("{}: no such sub command '{}'", self.name, name);
     }
 
     fn display_help(&self) {
