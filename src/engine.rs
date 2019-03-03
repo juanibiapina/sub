@@ -1,17 +1,12 @@
-extern crate regex;
-
-use regex::Regex;
-
 use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use std::os::unix::fs::PermissionsExt;
-use std::path::{PathBuf, Path};
 use std::process::Command;
 
 use crate::subcommand::SubCommand;
 use crate::error::Result;
 use crate::error::Error;
+use crate::parser;
 
 pub struct Engine {
     name: String,
@@ -110,9 +105,9 @@ impl Engine {
                     continue;
                 }
 
-                let summary = extract_summary(&entry.path());
-                let usage = extract_usage(&entry.path());
-                let help = extract_help(&entry.path());
+                let summary = parser::extract_summary(&entry.path());
+                let usage = parser::extract_usage(&entry.path());
+                let help = parser::extract_help(&entry.path());
                 let subcommand = SubCommand::new(name, summary, usage, help);
 
                 subcommands.push(subcommand);
@@ -152,14 +147,14 @@ impl Engine {
             return
         }
 
-        let usage = extract_usage(&command_path);
+        let usage = parser::extract_usage(&command_path);
         if !usage.is_empty() {
             println!("Usage: {}\n", usage);
         }
 
-        let help = extract_help(&command_path);
+        let help = parser::extract_help(&command_path);
         if help.is_empty() {
-            let summary = extract_summary(&command_path);
+            let summary = parser::extract_summary(&command_path);
             if !summary.is_empty() {
                 println!("{}", summary);
             }
@@ -175,7 +170,7 @@ impl Engine {
             return Err(Error::UnknownSubCommand);
         }
 
-        if provides_completions(&command_path) {
+        if parser::provides_completions(&command_path) {
             let mut command = Command::new(command_path);
 
             command.arg("--complete");
@@ -236,93 +231,4 @@ impl Engine {
         path.push("libexec");
         path
     }
-}
-
-fn extract_summary(path: &Path) -> String {
-    let file = File::open(path).unwrap();
-    lazy_static! {
-        static ref SUMMARY_RE: Regex = Regex::new("^# Summary: (.*)$").unwrap();
-    }
-    for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
-        if let Some(caps) = SUMMARY_RE.captures(&line) {
-            if let Some(m) = caps.get(1) {
-                return m.as_str().to_owned();
-            }
-        }
-    }
-
-    "".to_owned()
-}
-
-fn extract_usage(path: &Path) -> String {
-    let file = File::open(path).unwrap();
-    lazy_static! {
-        static ref USAGE_RE: Regex = Regex::new("^# Usage: (.*)$").unwrap();
-    }
-    for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
-        if let Some(caps) = USAGE_RE.captures(&line) {
-            if let Some(m) = caps.get(1) {
-                return m.as_str().to_owned();
-            }
-        }
-    }
-
-    "".to_owned()
-}
-
-fn extract_help(path: &Path) -> String {
-    let file = File::open(path).unwrap();
-    lazy_static! {
-        static ref HELP_RE: Regex = Regex::new("^# Help: (.*)$").unwrap();
-    }
-    lazy_static! {
-        static ref COMMENT_RE: Regex = Regex::new("^# (.*)$").unwrap();
-    }
-    let mut help_started = false;
-    let mut help = String::new();
-
-    for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
-
-        if help_started {
-            if line.starts_with('#') {
-                if let Some(caps) = COMMENT_RE.captures(&line) {
-                    if let Some(m) = caps.get(1) {
-                        help.push('\n');
-                        help.push_str(m.as_str());
-                    } else {
-                        break;
-                    }
-                } else {
-                    help.push('\n');
-                }
-            } else {
-                break;
-            }
-        } else {
-            if let Some(caps) = HELP_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    help_started = true;
-                    help.push_str(m.as_str());
-                }
-            }
-        }
-    }
-
-    help
-}
-
-fn provides_completions(path: &Path) -> bool {
-    let file = File::open(path).unwrap();
-
-    for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
-        if line == "# Provide completions" {
-            return true;
-        }
-    }
-
-    false
 }
