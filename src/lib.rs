@@ -71,7 +71,7 @@ impl Sub {
         let libexec_path = self.libexec_path();
 
         if libexec_path.is_dir() {
-            for entry in fs::read_dir(self.libexec_path()).unwrap() {
+            for entry in fs::read_dir(libexec_path).unwrap() {
                 let entry = entry.unwrap();
                 let name = entry.file_name().into_string().unwrap();
 
