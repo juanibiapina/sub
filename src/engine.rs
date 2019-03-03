@@ -102,20 +102,16 @@ impl Engine {
         subcommands.push(SubCommand::new(
                 "commands".to_owned(),
                 "List available commands".to_owned(),
-                format!("Usage: {} commands", self.name),
-                "".to_owned(),
             )
         );
 
         subcommands.push(SubCommand::new(
                 "help".to_owned(),
                 "Display help for a sub command".to_owned(),
-                format!("Usage: {} help <command>", self.name),
-                "".to_owned(),
             )
         );
 
-        subcommands.sort_by(|c1, c2| c1.name.cmp(&c2.name));
+        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name())); // TODO PartialOrd
 
         subcommands
     }
@@ -174,7 +170,7 @@ impl Engine {
 
     fn display_commands(&self) {
         for subcommand in self.collect_subcommands() {
-            println!("{}", subcommand.name);
+            println!("{}", subcommand.name());
         }
     }
 
@@ -188,7 +184,7 @@ impl Engine {
 
             let max_width = subcommands
                 .iter()
-                .map(|subcommand| subcommand.name.as_ref())
+                .map(|subcommand| subcommand.name())
                 .map(|name: &str| name.len())
                 .max()
                 .unwrap();
@@ -196,7 +192,7 @@ impl Engine {
             let width = max_width + 4;
 
             for subcommand in subcommands {
-                println!("    {:width$}{}", subcommand.name, subcommand.summary, width = width);
+                println!("    {:width$}{}", subcommand.name(), subcommand.summary(), width = width);
             }
 
             println!();

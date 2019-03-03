@@ -4,19 +4,15 @@ use std::os::unix::fs::PermissionsExt;
 use crate::parser;
 
 pub struct SubCommand {
-    pub name: String,
-    pub summary: String,
-    pub usage: String,
-    pub help: String,
+    name: String,
+    summary: String,
 }
 
 impl SubCommand {
-    pub fn new(name: String, summary: String, usage: String, help: String) -> SubCommand {
+    pub fn new(name: String, summary: String) -> SubCommand {
         SubCommand {
             name,
             summary,
-            usage,
-            help,
         }
     }
 
@@ -36,14 +32,18 @@ impl SubCommand {
         }
 
         let summary = parser::extract_summary(&entry.path());
-        let usage = parser::extract_usage(&entry.path());
-        let help = parser::extract_help(&entry.path());
 
         Some(SubCommand::new(
                 name,
                 summary,
-                usage,
-                help
         ))
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn summary(&self) -> &str {
+        &self.summary
     }
 }
