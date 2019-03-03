@@ -20,7 +20,7 @@ fn main() {
     let args = matches
         .values_of("commands")
         .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
-        .unwrap_or(Vec::new());
+        .unwrap_or_default();
 
     let sub = Engine::new(name, root, args);
 

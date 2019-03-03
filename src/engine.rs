@@ -31,7 +31,7 @@ impl Engine {
     }
 
     pub fn run(&self) -> Result<i32> {
-        if self.args.len() == 0 {
+        if self.args.is_empty() {
             self.display_help();
             return Err(Error::NoSubCommand);
         }
@@ -48,7 +48,7 @@ impl Engine {
         let command_name = args.pop().unwrap();
 
         if command_name == "help" {
-            if command_args.len() == 0 {
+            if command_args.is_empty() {
                 self.display_help();
             } else {
                 self.display_help_for_command(&command_args[0]);
@@ -104,7 +104,7 @@ impl Engine {
                 let entry = entry.unwrap();
                 let name = entry.file_name().into_string().unwrap();
 
-                if name.starts_with(".") {
+                if name.starts_with('.') {
                     continue;
                 }
 
@@ -202,10 +202,10 @@ impl Engine {
 
     fn display_help(&self) {
         println!("Usage: {} <command> [args]", self.name);
-        println!("");
+        println!();
 
         let subcommands = self.collect_subcommands();
-        if subcommands.len() > 0 {
+        if !subcommands.is_empty() {
             println!("Available commands:");
 
             let max_width = subcommands
@@ -221,7 +221,7 @@ impl Engine {
                 println!("    {:width$}{}", subcommand.name, subcommand.summary, width = width);
             }
 
-            println!("");
+            println!();
         }
 
         println!("Use '{} help <command>' for information on a specific command.", self.name);
@@ -289,7 +289,7 @@ fn extract_help(path: &Path) -> String {
         let line = line.unwrap();
 
         if help_started {
-            if line.starts_with("#") {
+            if line.starts_with('#') {
                 if let Some(caps) = COMMENT_RE.captures(&line) {
                     if let Some(m) = caps.get(1) {
                         help.push('\n');
