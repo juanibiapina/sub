@@ -1,5 +1,6 @@
 use std::fs::DirEntry;
 use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 
 use crate::parser;
 
@@ -24,11 +25,11 @@ impl SubCommand {
             return None;
         }
 
-        let summary = parser::extract_summary(&entry.path());
+        let path = entry.path();
 
         Some(SubCommand::ExternalCommand(ExternalCommand {
             name,
-            summary,
+            path,
         }))
     }
 
@@ -46,10 +47,10 @@ impl SubCommand {
         }
     }
 
-    pub fn summary(&self) -> &str {
+    pub fn summary(&self) -> String {
         match self {
-            SubCommand::InternalCommand(c) => &c.summary,
-            SubCommand::ExternalCommand(c) => &c.summary,
+            SubCommand::InternalCommand(c) => c.summary.clone(),
+            SubCommand::ExternalCommand(c) => parser::extract_summary(&c.path),
         }
     }
 }
@@ -61,5 +62,5 @@ pub struct InternalCommand {
 
 pub struct ExternalCommand {
     name: String,
-    summary: String,
+    path: PathBuf,
 }
