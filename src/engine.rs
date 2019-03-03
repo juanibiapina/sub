@@ -1,6 +1,5 @@
 use std::fs;
 use std::path::PathBuf;
-use std::os::unix::fs::PermissionsExt;
 use std::process::Command;
 
 use crate::subcommand::SubCommand;
@@ -94,23 +93,9 @@ impl Engine {
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(libexec_path).unwrap() {
-                let entry = entry.unwrap();
-                let name = entry.file_name().into_string().unwrap();
-
-                if name.starts_with('.') {
-                    continue;
+                if let Some(subcommand)  = SubCommand::from_entry(&entry.unwrap()) {
+                    subcommands.push(subcommand);
                 }
-
-                if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
-                    continue;
-                }
-
-                let summary = parser::extract_summary(&entry.path());
-                let usage = parser::extract_usage(&entry.path());
-                let help = parser::extract_help(&entry.path());
-                let subcommand = SubCommand::new(name, summary, usage, help);
-
-                subcommands.push(subcommand);
             }
         }
 
