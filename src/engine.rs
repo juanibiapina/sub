@@ -109,34 +109,17 @@ impl Engine {
         println!("{}: no such sub command '{}'", self.name, name);
     }
 
-    fn display_help_for_command(&self, command: &str) {
-        let libexec_path = self.libexec_path();
+    fn display_help_for_command(&self, command_name: &str) {
+        let command_path = self.command_path(command_name);
 
-        if libexec_path.is_dir() {
-            for entry in fs::read_dir(libexec_path).unwrap() {
-                let entry = entry.unwrap();
-                let name = entry.file_name().into_string().unwrap();
-
-                if name.starts_with(".") {
-                    continue;
-                }
-
-                if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
-                    continue;
-                }
-
-                if name == command {
-                    let help = extract_help(&entry.path());
-                    if help.is_empty() {
-                        let summary = extract_summary(&entry.path());
-                        if !summary.is_empty() {
-                            println!("{}", summary);
-                        }
-                    } else {
-                        println!("{}", help);
-                    }
-                }
+        let help = extract_help(&command_path);
+        if help.is_empty() {
+            let summary = extract_summary(&command_path);
+            if !summary.is_empty() {
+                println!("{}", summary);
             }
+        } else {
+            println!("{}", help);
         }
     }
 
