@@ -16,6 +16,7 @@ Available commands:
     env         Print the value of an environment variable
     error       Return with error 4
     help        Display help for a sub command
+    nested      Run a nested command
 
 Use 'main help <command>' for information on a specific command."
 }

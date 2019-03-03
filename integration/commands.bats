@@ -12,5 +12,6 @@ load test_helper
 echo
 env
 error
-help"
+help
+nested"
 }

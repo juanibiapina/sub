@@ -8,11 +8,7 @@ load test_helper
   run main completions
 
   assert_success
-  assert_output "commands
-echo
-env
-error
-help"
+  assert_output "$(main commands)"
 }
 
 @test "completions: fails gracefully when command is not found" {
