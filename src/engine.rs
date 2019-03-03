@@ -150,7 +150,7 @@ impl Engine {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
-            println!("{}: no such sub command '{}'", self.name, command_name);
+            self.display_unknown_subcommand(command_name);
             return
         }
 
