@@ -1,6 +1,7 @@
 # Bugs
 
 - remove empty OPTIONS section
+- exploding when subcommand is not found
 
 # Features
 
@@ -16,3 +17,7 @@
 # Tests
 
 - rewrite tests using rust
+
+# Refactor
+
+- start thinking about error propagation
