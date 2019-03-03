@@ -44,10 +44,17 @@ impl SubCommand {
         }))
     }
 
-    pub fn internal(name: String, summary: String) -> SubCommand {
+    pub fn internal_help() -> SubCommand {
         SubCommand::InternalCommand(InternalCommand{
-            name,
-            summary,
+            name: "help",
+            summary: "Display help for a sub command",
+        })
+    }
+
+    pub fn internal_commands() -> SubCommand {
+        SubCommand::InternalCommand(InternalCommand{
+            name: "commands",
+            summary: "List available commands",
         })
     }
 
@@ -61,7 +68,7 @@ impl SubCommand {
 
     pub fn summary(&self) -> String {
         match self {
-            SubCommand::InternalCommand(c) => c.summary.clone(),
+            SubCommand::InternalCommand(c) => c.summary.to_owned(),
             SubCommand::ExternalCommand(c) => parser::extract_summary(&c.path),
             SubCommand::NestedCommand(c) => {
                 let mut readme_path = c.path.clone();
@@ -78,8 +85,8 @@ impl SubCommand {
 }
 
 pub struct InternalCommand {
-    name: String,
-    summary: String,
+    name: &'static str,
+    summary: &'static str,
 }
 
 pub struct ExternalCommand {

@@ -99,17 +99,8 @@ impl Engine {
             }
         }
 
-        subcommands.push(SubCommand::internal(
-                "commands".to_owned(),
-                "List available commands".to_owned(),
-            )
-        );
-
-        subcommands.push(SubCommand::internal(
-                "help".to_owned(),
-                "Display help for a sub command".to_owned(),
-            )
-        );
+        subcommands.push(SubCommand::internal_help());
+        subcommands.push(SubCommand::internal_commands());
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
