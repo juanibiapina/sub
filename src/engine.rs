@@ -57,6 +57,11 @@ impl Engine {
             return Ok(0);
         }
 
+        if command_name == "commands" {
+            self.display_commands();
+            return Ok(0);
+        }
+
         let command_path = self.command_path(&command_name);
 
         if !command_path.exists() {
@@ -132,6 +137,19 @@ impl Engine {
             }
         } else {
             println!("{}", help);
+        }
+    }
+
+    fn display_commands(&self) {
+        let subcommands = self.collect_subcommands();
+
+        let mut names = subcommands.iter().map(|s| s.name.as_ref()).collect::<Vec<_>>();
+        names.push("commands");
+        names.push("help");
+        names.sort();
+
+        for name in names {
+            println!("{}", name);
         }
     }
 
