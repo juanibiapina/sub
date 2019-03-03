@@ -35,8 +35,6 @@ impl SubCommand {
             return None;
         }
 
-        let name = entry.file_name().into_string().unwrap();
-
         let summary = parser::extract_summary(&entry.path());
         let usage = parser::extract_usage(&entry.path());
         let help = parser::extract_help(&entry.path());
