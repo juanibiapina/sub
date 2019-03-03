@@ -112,6 +112,11 @@ impl Engine {
     fn display_help_for_command(&self, command_name: &str) {
         let command_path = self.command_path(command_name);
 
+        if !command_path.exists() {
+            println!("{}: no such sub command '{}'", self.name, command_name);
+            return
+        }
+
         let help = extract_help(&command_path);
         if help.is_empty() {
             let summary = extract_summary(&command_path);
