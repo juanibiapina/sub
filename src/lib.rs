@@ -2,4 +2,4 @@
 
 pub mod error;
 pub mod engine;
-pub mod subcommand;
+mod subcommand;
