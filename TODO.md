@@ -17,4 +17,4 @@
 
 # Refactor
 
-- start thinking about error propagation
+- get rid of clap?
