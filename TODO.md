@@ -12,7 +12,3 @@
 # Tests
 
 - rewrite tests using rust
-
-# Refactor
-
-- create a better abstraction for internal and external commands
