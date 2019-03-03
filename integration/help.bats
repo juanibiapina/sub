@@ -13,3 +13,13 @@ load test_helper
   assert_line "SUBCOMMANDS:"
   assert_line --partial "echo"
 }
+
+@test "help: includes summaries of commands" {
+  fixture
+
+  run main help
+
+  assert_success
+  assert_line --partial "Echoes its arguments"
+  assert_line --partial "Returns with error"
+}

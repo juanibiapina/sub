@@ -1,11 +1,15 @@
 extern crate clap;
 extern crate itertools;
+extern crate regex;
 
 use clap::{App, AppSettings, Arg, SubCommand as ClapSubCommand};
+use regex::Regex;
 
 use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::process::exit;
 use std::process::Command;
 
@@ -79,7 +83,8 @@ impl Engine {
                     continue;
                 }
 
-                let subcommand = SubCommand::new(name);
+                let summary = extract_summary(&entry.path());
+                let subcommand = SubCommand::new(name, summary);
 
                 subcommands.push(subcommand);
             }
@@ -99,9 +104,10 @@ impl Engine {
             .setting(AppSettings::DisableVersion)
             .setting(AppSettings::VersionlessSubcommands);
 
-        for subcommand in subcommands {
+        for subcommand in subcommands.iter() {
             app = app.subcommand(
                 ClapSubCommand::with_name(subcommand.name.as_ref())
+                .about(subcommand.summary.as_ref())
                 .setting(AppSettings::TrailingVarArg)
                 .setting(AppSettings::AllowLeadingHyphen)
                 .arg(Arg::with_name("args")
@@ -124,4 +130,21 @@ impl Engine {
         path.push("libexec");
         path
     }
+}
+
+fn extract_summary(path: &Path) -> String {
+    let file = File::open(path).unwrap();
+    lazy_static! {
+        static ref RE: Regex = Regex::new("^# Summary: (.*)$").unwrap();
+    }
+    for line in BufReader::new(file).lines() {
+        let line = line.unwrap();
+        if let Some(caps) = RE.captures(&line) {
+            if let Some(m) = caps.get(1) {
+                return m.as_str().to_owned();
+            }
+        }
+    }
+
+    "".to_owned()
 }

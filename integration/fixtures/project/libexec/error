@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Summary: Returns with error
 
 set -e
 

@@ -7,3 +7,5 @@ edition = "2018"
 [dependencies]
 clap = "*"
 itertools = "*"
+regex = "*"
+lazy_static = "*"

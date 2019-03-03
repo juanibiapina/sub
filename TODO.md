@@ -5,7 +5,8 @@
 # Features
 
 - add support for nested commands as directories
-- extract documentation for file commands
+- extract help text for file commands
+- extract usage for file commands
 - extract documentation for directory commands
 - allow command specific completions
 - generate completions
