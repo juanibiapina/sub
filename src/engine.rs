@@ -64,8 +64,7 @@ impl Engine {
 
         if command_name == "completions" {
             // TODO display help completions when not enough arguments
-            self.display_completions(&command_args[0]);
-            return Ok(0);
+            return self.display_completions(&command_args[0]);
         }
 
         let command_path = self.command_path(&command_name);
@@ -146,12 +145,12 @@ impl Engine {
         }
     }
 
-    fn display_completions(&self, command_name: &str) {
+    fn display_completions(&self, command_name: &str) -> Result<i32> {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
             println!("{}: no such sub command '{}'", self.name, command_name);
-            return // TODO return correct error here
+            return Err(Error::NoSubCommand);
         }
 
         if provides_completions(&command_path) {
@@ -160,9 +159,15 @@ impl Engine {
             command.arg("--complete");
             command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
 
-            command.status().unwrap();
-            // TODO return status
+            let status = command.status().unwrap();
+
+            return match status.code() {
+                Some(code) => Ok(code),
+                None => Err(Error::SubCommandInterrupted),
+            };
         }
+
+        Ok(0)
     }
 
     fn display_commands(&self) {
