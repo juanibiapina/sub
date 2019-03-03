@@ -328,4 +328,3 @@ fn provides_completions(path: &Path) -> bool {
 
     false
 }
-
