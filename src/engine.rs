@@ -122,6 +122,22 @@ impl Engine {
             }
         }
 
+        subcommands.push(SubCommand::new(
+                "commands".to_owned(),
+                "List available commands".to_owned(),
+                format!("Usage: {} commands", self.name),
+                "".to_owned(),
+            )
+        );
+
+        subcommands.push(SubCommand::new(
+                "help".to_owned(),
+                "Display help for a sub command".to_owned(),
+                format!("Usage: {} help <command>", self.name),
+                "".to_owned(),
+            )
+        );
+
         subcommands
     }
 
@@ -180,9 +196,7 @@ impl Engine {
     fn display_commands(&self) {
         let subcommands = self.collect_subcommands();
 
-        let mut names = subcommands.iter().map(|s| s.name.as_ref()).collect::<Vec<_>>();
-        names.push("commands");
-        names.push("help");
+        let mut names = subcommands.iter().map(|s| s.name.as_ref()).collect::<Vec<&str>>();
         names.sort();
 
         for name in names {
