@@ -99,19 +99,19 @@ impl Engine {
             }
         }
 
-        subcommands.push(SubCommand::new(
+        subcommands.push(SubCommand::internal(
                 "commands".to_owned(),
                 "List available commands".to_owned(),
             )
         );
 
-        subcommands.push(SubCommand::new(
+        subcommands.push(SubCommand::internal(
                 "help".to_owned(),
                 "Display help for a sub command".to_owned(),
             )
         );
 
-        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name())); // TODO PartialOrd
+        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
         subcommands
     }

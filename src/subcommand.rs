@@ -3,19 +3,12 @@ use std::os::unix::fs::PermissionsExt;
 
 use crate::parser;
 
-pub struct SubCommand {
-    name: String,
-    summary: String,
+pub enum SubCommand {
+    InternalCommand(InternalCommand),
+    ExternalCommand(ExternalCommand),
 }
 
 impl SubCommand {
-    pub fn new(name: String, summary: String) -> SubCommand {
-        SubCommand {
-            name,
-            summary,
-        }
-    }
-
     pub fn from_entry(entry: &DirEntry) -> Option<SubCommand> {
         let name = entry.file_name().into_string().unwrap();
 
@@ -33,17 +26,40 @@ impl SubCommand {
 
         let summary = parser::extract_summary(&entry.path());
 
-        Some(SubCommand::new(
-                name,
-                summary,
-        ))
+        Some(SubCommand::ExternalCommand(ExternalCommand {
+            name,
+            summary,
+        }))
+    }
+
+    pub fn internal(name: String, summary: String) -> SubCommand {
+        SubCommand::InternalCommand(InternalCommand{
+            name,
+            summary,
+        })
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        match self {
+            SubCommand::InternalCommand(c) => &c.name,
+            SubCommand::ExternalCommand(c) => &c.name,
+        }
     }
 
     pub fn summary(&self) -> &str {
-        &self.summary
+        match self {
+            SubCommand::InternalCommand(c) => &c.summary,
+            SubCommand::ExternalCommand(c) => &c.summary,
+        }
     }
+}
+
+pub struct InternalCommand {
+    name: String,
+    summary: String,
+}
+
+pub struct ExternalCommand {
+    name: String,
+    summary: String,
 }
