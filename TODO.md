@@ -1,7 +1,3 @@
-# Bugs
-
-- remove empty OPTIONS section
-
 # Features
 
 - add support for nested commands as directories
@@ -14,7 +10,3 @@
 # Tests
 
 - rewrite tests using rust
-
-# Refactor
-
-- get rid of clap?

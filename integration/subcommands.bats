@@ -8,20 +8,7 @@ load test_helper
   run main
 
   assert_success
-  assert_line --partial "main"
-  assert_line "USAGE:"
-  assert_line "SUBCOMMANDS:"
-  assert_line --partial "echo"
-}
-
-@test "subcommands: lists files as subcommands" {
-  fixture
-
-  run main
-
-  assert_success
-  assert_line "SUBCOMMANDS:"
-  assert_line --partial "echo"
+  assert_output "$(main help)"
 }
 
 @test "subcommands: ignores hidden files" {

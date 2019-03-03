@@ -8,20 +8,16 @@ load test_helper
   run main help
 
   assert_success
-  assert_line --partial "main"
-  assert_line "USAGE:"
-  assert_line "SUBCOMMANDS:"
-  assert_line --partial "echo"
-}
+  assert_output "Usage: main <command> [args]
 
-@test "help: includes summaries of commands" {
-  fixture
+Available commands:
+    commands    List available commands
+    echo        Echo arguments
+    env         Print the value of an environment variable
+    error       Return with error 4
+    help        Display help for a sub command
 
-  run main help
-
-  assert_success
-  assert_line --partial "Echoes its arguments"
-  assert_line --partial "Returns with error"
+Use 'main help <command>' for information on a specific command."
 }
 
 @test "help: displays help (including usage) for a subcommand" {
@@ -43,7 +39,7 @@ The help section can span multiple lines."
   run main help error
 
   assert_success
-  assert_output "Returns with error"
+  assert_output "Return with error 4"
 }
 
 @test "help: fails gracefully with requested command doesn't exist" {

@@ -2,7 +2,6 @@ extern crate clap;
 extern crate itertools;
 extern crate regex;
 
-use clap::{App, AppSettings, Arg, SubCommand as ClapSubCommand};
 use regex::Regex;
 
 use std::fs;
@@ -138,6 +137,8 @@ impl Engine {
             )
         );
 
+        subcommands.sort_by(|c1, c2| c1.name.cmp(&c2.name));
+
         subcommands
     }
 
@@ -194,40 +195,36 @@ impl Engine {
     }
 
     fn display_commands(&self) {
-        let subcommands = self.collect_subcommands();
-
-        let mut names = subcommands.iter().map(|s| s.name.as_ref()).collect::<Vec<&str>>();
-        names.sort();
-
-        for name in names {
-            println!("{}", name);
+        for subcommand in self.collect_subcommands() {
+            println!("{}", subcommand.name);
         }
     }
 
     fn display_help(&self) {
+        println!("Usage: {} <command> [args]", self.name);
+        println!("");
+
         let subcommands = self.collect_subcommands();
+        if subcommands.len() > 0 {
+            println!("Available commands:");
 
-        let mut app = App::new(self.name.as_ref())
-            .bin_name(self.name.as_ref())
-            .setting(AppSettings::ColoredHelp)
-            .setting(AppSettings::NoBinaryName)
-            .setting(AppSettings::SubcommandRequiredElseHelp)
-            .setting(AppSettings::DisableVersion)
-            .setting(AppSettings::VersionlessSubcommands);
+            let max_width = subcommands
+                .iter()
+                .map(|subcommand| subcommand.name.as_ref())
+                .map(|name: &str| name.len())
+                .max()
+                .unwrap();
 
-        for subcommand in subcommands.iter() {
-            app = app.subcommand(
-                ClapSubCommand::with_name(subcommand.name.as_ref())
-                .about(subcommand.summary.as_ref())
-                .setting(AppSettings::TrailingVarArg)
-                .setting(AppSettings::AllowLeadingHyphen)
-                .arg(Arg::with_name("args")
-                     .hidden(true)
-                     .multiple(true)),
-                     );
+            let width = max_width + 4;
+
+            for subcommand in subcommands {
+                println!("    {:width$}{}", subcommand.name, subcommand.summary, width = width);
+            }
+
+            println!("");
         }
 
-        app.print_help().unwrap();
+        println!("Use '{} help <command>' for information on a specific command.", self.name);
     }
 
     fn command_path(&self, command_name: &str) -> PathBuf {
