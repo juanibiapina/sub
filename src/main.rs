@@ -6,6 +6,8 @@ use clap::{App, AppSettings, Arg};
 
 use std::fs;
 
+use sub::engine::Engine;
+
 fn main() {
     let app = init_cli();
 
@@ -18,7 +20,7 @@ fn main() {
         .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
         .unwrap_or(Vec::new());
 
-    let sub = sub::Sub::new(name, root, args);
+    let sub = Engine::new(name, root, args);
 
     sub.run();
 }

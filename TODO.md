@@ -15,3 +15,7 @@
 # Tests
 
 - rewrite tests using rust
+
+# Refactor
+
+- create a command struct and derive the clap app from it
