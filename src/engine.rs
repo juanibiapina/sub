@@ -1,5 +1,3 @@
-extern crate clap;
-extern crate itertools;
 extern crate regex;
 
 use regex::Regex;
