@@ -70,15 +70,20 @@ impl Engine {
             return self.display_completions(&command_args[0]);
         }
 
-        let command_path = self.command_path(&command_name);
+        self.run_subcommand(&command_name, &command_args)
+    }
+
+    fn run_subcommand(&self, name: &str, args: &[String]) -> Result<i32> {
+        let command_path = self.command_path(&name);
 
         if !command_path.exists() {
-            self.display_unknown_subcommand(&command_name);
+            self.display_unknown_subcommand(&name);
             return Err(Error::UnknownSubCommand);
         }
 
         let mut command = Command::new(command_path);
-        command.args(command_args);
+
+        command.args(args);
 
         command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
 
