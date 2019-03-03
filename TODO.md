@@ -5,8 +5,14 @@
   - add support for nested help
   - add support for nested commands
   - add support for nested completions
+- display help for internal commands
+- display completions for internal commands
 - generate completions
 
 # Tests
 
 - rewrite tests using rust
+
+# Refactor
+
+- create a better abstraction for internal and external commands
