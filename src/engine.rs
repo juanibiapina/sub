@@ -1,13 +1,15 @@
 extern crate clap;
 extern crate itertools;
 
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand as ClapSubCommand};
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::process::exit;
 use std::process::Command;
+
+use crate::subcommand::SubCommand;
 
 pub struct Engine {
     name: String,
@@ -59,16 +61,10 @@ impl Engine {
         }
     }
 
-    fn display_help(&self) {
-        let mut app = App::new(self.name.as_ref())
-            .bin_name(self.name.as_ref())
-            .setting(AppSettings::ColoredHelp)
-            .setting(AppSettings::NoBinaryName)
-            .setting(AppSettings::SubcommandRequiredElseHelp)
-            .setting(AppSettings::DisableVersion)
-            .setting(AppSettings::VersionlessSubcommands);
-
+    fn collect_subcommands(&self) -> Vec<SubCommand> {
         let libexec_path = self.libexec_path();
+
+        let mut subcommands = Vec::new();
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(libexec_path).unwrap() {
@@ -83,15 +79,35 @@ impl Engine {
                     continue;
                 }
 
-                app = app.subcommand(
-                    SubCommand::with_name(name.as_ref())
-                    .setting(AppSettings::TrailingVarArg)
-                    .setting(AppSettings::AllowLeadingHyphen)
-                    .arg(Arg::with_name("args")
-                         .hidden(true)
-                         .multiple(true)),
-                         );
+                let subcommand = SubCommand::new(name);
+
+                subcommands.push(subcommand);
             }
+        }
+
+        subcommands
+    }
+
+    fn display_help(&self) {
+        let subcommands = self.collect_subcommands();
+
+        let mut app = App::new(self.name.as_ref())
+            .bin_name(self.name.as_ref())
+            .setting(AppSettings::ColoredHelp)
+            .setting(AppSettings::NoBinaryName)
+            .setting(AppSettings::SubcommandRequiredElseHelp)
+            .setting(AppSettings::DisableVersion)
+            .setting(AppSettings::VersionlessSubcommands);
+
+        for subcommand in subcommands {
+            app = app.subcommand(
+                ClapSubCommand::with_name(subcommand.name.as_ref())
+                .setting(AppSettings::TrailingVarArg)
+                .setting(AppSettings::AllowLeadingHyphen)
+                .arg(Arg::with_name("args")
+                     .hidden(true)
+                     .multiple(true)),
+                     );
         }
 
         app.print_help().unwrap();
