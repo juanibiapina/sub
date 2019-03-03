@@ -10,7 +10,6 @@
 - extract documentation for directory commands
 - allow command specific completions
 - generate completions
-- provide access to the root directory
 - accept arguments on help subcommand
 
 # Tests

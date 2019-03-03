@@ -62,6 +62,8 @@ impl Engine {
         let mut command = Command::new(command_path);
         command.args(command_args);
 
+        command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
+
         let status = command.status().unwrap();
 
         match status.code() {

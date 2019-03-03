@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Summary: Prints the value of an environment variable
+
+set -e
+
+eval "echo \$$1"
