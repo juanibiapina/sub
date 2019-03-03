@@ -96,8 +96,9 @@ impl Engine {
                 }
 
                 let summary = extract_summary(&entry.path());
+                let usage = extract_usage(&entry.path());
                 let help = extract_help(&entry.path());
-                let subcommand = SubCommand::new(name, summary, help);
+                let subcommand = SubCommand::new(name, summary, usage, help);
 
                 subcommands.push(subcommand);
             }
@@ -116,6 +117,11 @@ impl Engine {
         if !command_path.exists() {
             println!("{}: no such sub command '{}'", self.name, command_name);
             return
+        }
+
+        let usage = extract_usage(&command_path);
+        if !usage.is_empty() {
+            println!("Usage: {}\n", usage);
         }
 
         let help = extract_help(&command_path);
@@ -176,6 +182,23 @@ fn extract_summary(path: &Path) -> String {
     for line in BufReader::new(file).lines() {
         let line = line.unwrap();
         if let Some(caps) = SUMMARY_RE.captures(&line) {
+            if let Some(m) = caps.get(1) {
+                return m.as_str().to_owned();
+            }
+        }
+    }
+
+    "".to_owned()
+}
+
+fn extract_usage(path: &Path) -> String {
+    let file = File::open(path).unwrap();
+    lazy_static! {
+        static ref USAGE_RE: Regex = Regex::new("^# Usage: (.*)$").unwrap();
+    }
+    for line in BufReader::new(file).lines() {
+        let line = line.unwrap();
+        if let Some(caps) = USAGE_RE.captures(&line) {
             if let Some(m) = caps.get(1) {
                 return m.as_str().to_owned();
             }

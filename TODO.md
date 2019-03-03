@@ -5,11 +5,10 @@
 # Features
 
 - add support for nested commands as directories
-- extract usage for file commands
-- extract documentation for directory commands
+  - add support for nested help
+  - extract documentation
 - allow command specific completions
 - generate completions
-- accept arguments on help subcommand
 
 # Tests
 
