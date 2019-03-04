@@ -47,7 +47,7 @@ impl Engine {
         };
         let command_name = args.pop().unwrap();
 
-        let subcommand = self.build_subcommand(&command_name);
+        let subcommand = self.subcommand(&command_name);
 
         if let Some(subcommand) = subcommand {
             subcommand.invoke(self, &command_args)
@@ -57,7 +57,7 @@ impl Engine {
         }
     }
 
-    fn build_subcommand(&self, name: &str) -> Option<SubCommand> {
+    fn subcommand(&self, name: &str) -> Option<SubCommand> {
         match name {
             "help" => Some(SubCommand::internal_help()),
             "commands" => Some(SubCommand::internal_commands()),
@@ -92,7 +92,7 @@ impl Engine {
     }
 
     pub fn display_help_for_command(&self, command_name: &str) {
-        let subcommand = self.build_subcommand(command_name);
+        let subcommand = self.subcommand(command_name);
 
         if let Some(subcommand) = subcommand {
             // TODO display usage information before help

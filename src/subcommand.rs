@@ -169,7 +169,7 @@ are indented.", // TODO add Args: section
                     let help_command = SubCommand::internal_help();
                     help_command.invoke(engine, &[c.name.to_owned()])
                 } else {
-                    Ok(0)
+                    Ok(0) // TODO recurse
                 }
             },
         }
