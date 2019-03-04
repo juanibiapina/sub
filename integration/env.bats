@@ -7,6 +7,10 @@ load test_helper
 
   run main env _MAIN_ROOT
 
+  if [ $(uname) = "Darwin" ]; then
+    prefix="/private"
+  fi
+
   assert_success
-  assert_output "/private${SUB_TEST_DIR}/project"
+  assert_output "$prefix${SUB_TEST_DIR}/project"
 }
