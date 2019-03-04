@@ -1,9 +1,10 @@
-use std::fs::DirEntry;
-use std::path::Path;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
+use std::process::Command;
 
+use crate::error::{Error, Result};
 use crate::parser;
+use crate::engine::Engine;
 
 pub enum SubCommand {
     InternalCommand(InternalCommand),
@@ -12,31 +13,33 @@ pub enum SubCommand {
 }
 
 impl SubCommand {
-    fn from_dir(path: &Path) -> Option<SubCommand> {
+    fn from_dir(path: PathBuf) -> Option<SubCommand> {
         let name = path.file_name().unwrap().to_str().unwrap().to_owned();
 
         Some(SubCommand::NestedCommand(NestedCommand {
             name,
-            path: path.to_owned(),
+            path,
         }))
     }
 
-    pub fn from_entry(entry: &DirEntry) -> Option<SubCommand> {
-        let name = entry.file_name().into_string().unwrap();
+    pub fn from_path(path: PathBuf) -> Option<SubCommand> {
+        if !path.exists() {
+            return None;
+        }
+
+        let name = path.file_name().unwrap().to_str().unwrap().to_string();
 
         if name.starts_with('.') {
             return None;
         }
 
-        if entry.path().is_dir() {
-            return SubCommand::from_dir(&entry.path());
+        if path.is_dir() {
+            return SubCommand::from_dir(path);
         }
 
-        if entry.metadata().unwrap().permissions().mode() & 0o111 == 0 {
+        if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
             return None;
         }
-
-        let path = entry.path();
 
         Some(SubCommand::ExternalCommand(ExternalCommand {
             name,
@@ -48,6 +51,14 @@ impl SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "help",
             summary: "Display help for a sub command",
+            func: |engine: &Engine, args: &[String]| -> Result<i32> {
+                if args.is_empty() {
+                    engine.display_help();
+                } else {
+                    engine.display_help_for_command(&args[0]);
+                }
+                return Ok(0);
+            },
         })
     }
 
@@ -55,6 +66,24 @@ impl SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "commands",
             summary: "List available commands",
+            func: |engine: &Engine, _args: &[String]| -> Result<i32> {
+                engine.display_commands();
+                return Ok(0);
+            },
+        })
+    }
+
+    pub fn internal_completions() -> SubCommand {
+        SubCommand::InternalCommand(InternalCommand{
+            name: "completions",
+            summary: "List completions for a sub command",
+            func: |engine: &Engine, args: &[String]| -> Result<i32> {
+                if args.len() != 1 {
+                    engine.display_commands();
+                    return Ok(0)
+                }
+                return engine.display_completions(&args[0]);
+            },
         })
     }
 
@@ -82,11 +111,38 @@ impl SubCommand {
             },
         }
     }
+
+    pub fn invoke(&self, engine: &Engine, args: &[String]) -> Result<i32> {
+        match self {
+            SubCommand::InternalCommand(c) => (c.func)(engine, args),
+            SubCommand::ExternalCommand(c) => {
+                if !c.path.exists() {
+                    engine.display_unknown_subcommand(&c.name);
+                    return Err(Error::UnknownSubCommand);
+                }
+
+                let mut command = Command::new(&c.path);
+
+                command.args(args);
+
+                command.env(format!("_{}_ROOT", engine.name().to_uppercase()), engine.root());
+
+                let status = command.status().unwrap();
+
+                match status.code() {
+                    Some(code) => Ok(code),
+                    None => Err(Error::SubCommandInterrupted),
+                }
+            },
+            SubCommand::NestedCommand(_c) => panic!("TODO"),
+        }
+    }
 }
 
 pub struct InternalCommand {
     name: &'static str,
     summary: &'static str,
+    func: fn(&Engine, &[String]) -> Result<i32>,
 }
 
 pub struct ExternalCommand {

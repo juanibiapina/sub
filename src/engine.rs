@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::subcommand::SubCommand;
@@ -22,6 +22,14 @@ impl Engine {
         }
     }
 
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
     pub fn run(&self) -> Result<i32> {
         if self.args.is_empty() {
             self.display_help();
@@ -39,50 +47,22 @@ impl Engine {
         };
         let command_name = args.pop().unwrap();
 
-        if command_name == "help" {
-            if command_args.is_empty() {
-                self.display_help();
-            } else {
-                self.display_help_for_command(&command_args[0]);
-            }
-            return Ok(0);
-        }
+        let subcommand = self.build_subcommand(&command_name);
 
-        if command_name == "commands" {
-            self.display_commands();
-            return Ok(0);
+        if let Some(subcommand) = subcommand {
+            subcommand.invoke(self, &command_args)
+        } else {
+            self.display_unknown_subcommand(&command_name);
+            Err(Error::UnknownSubCommand)
         }
-
-        if command_name == "completions" {
-            if command_args.len() != 1 {
-                self.display_commands();
-                return Ok(0)
-            }
-            return self.display_completions(&command_args[0]);
-        }
-
-        self.run_subcommand(&command_name, &command_args)
     }
 
-    fn run_subcommand(&self, name: &str, args: &[String]) -> Result<i32> {
-        let command_path = self.command_path(&name);
-
-        if !command_path.exists() {
-            self.display_unknown_subcommand(&name);
-            return Err(Error::UnknownSubCommand);
-        }
-
-        let mut command = Command::new(command_path);
-
-        command.args(args);
-
-        command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
-
-        let status = command.status().unwrap();
-
-        match status.code() {
-            Some(code) => Ok(code),
-            None => Err(Error::SubCommandInterrupted),
+    fn build_subcommand(&self, name: &str) -> Option<SubCommand> {
+        match name {
+            "help" => Some(SubCommand::internal_help()),
+            "commands" => Some(SubCommand::internal_commands()),
+            "completions" => Some(SubCommand::internal_completions()),
+            _ => SubCommand::from_path(self.command_path(name)),
         }
     }
 
@@ -93,7 +73,7 @@ impl Engine {
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(libexec_path).unwrap() {
-                if let Some(subcommand)  = SubCommand::from_entry(&entry.unwrap()) {
+                if let Some(subcommand)  = SubCommand::from_path(entry.unwrap().path()) {
                     subcommands.push(subcommand);
                 }
             }
@@ -107,11 +87,11 @@ impl Engine {
         subcommands
     }
 
-    fn display_unknown_subcommand(&self, name: &str) {
+    pub fn display_unknown_subcommand(&self, name: &str) {
         println!("{}: no such sub command '{}'", self.name, name);
     }
 
-    fn display_help_for_command(&self, command_name: &str) {
+    pub fn display_help_for_command(&self, command_name: &str) {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
@@ -135,7 +115,7 @@ impl Engine {
         }
     }
 
-    fn display_completions(&self, command_name: &str) -> Result<i32> {
+    pub fn display_completions(&self, command_name: &str) -> Result<i32> {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
@@ -159,13 +139,13 @@ impl Engine {
         Ok(0)
     }
 
-    fn display_commands(&self) {
+    pub fn display_commands(&self) {
         for subcommand in self.collect_subcommands() {
             println!("{}", subcommand.name());
         }
     }
 
-    fn display_help(&self) {
+    pub fn display_help(&self) {
         println!("Usage: {} <command> [args]", self.name);
         println!();
 
