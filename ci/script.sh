@@ -14,6 +14,7 @@ main() {
     cross test --target $TARGET --release
 
     export RUST_BACKTRACE=1
+    export SUB_BIN=target/$TARGET/debug/sub
     make integration
 }
 
