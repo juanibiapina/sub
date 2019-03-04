@@ -16,10 +16,23 @@ fn main() {
     let matches = app.get_matches();
 
     let name = matches.value_of("name").unwrap().to_owned();
-    let root = match fs::canonicalize(matches.value_of("root").unwrap()) {
-        Ok(path) => path,
+    let relative = matches.value_of("relative").unwrap_or(".");
+    let bin = matches.value_of("bin").unwrap();
+    let root = match fs::canonicalize(&bin) {
+        Ok(mut path) => {
+            path.pop(); // remove bin name
+            path.push(&relative);
+            match fs::canonicalize(&path) {
+                Ok(path) => path,
+                Err(e) => {
+                    println!("Invalid root path: {}", path.as_path().to_str().unwrap());
+                    println!("Original error: {}", e);
+                    exit(1)
+                }
+            }
+        },
         Err(e) => {
-            println!("Invalid root directory: {}", matches.value_of("root").unwrap());
+            println!("Invalid bin path: {}", matches.value_of("bin").unwrap());
             println!("Original error: {}", e);
             exit(1)
         }
@@ -51,11 +64,15 @@ fn init_cli<'a, 'b>() -> App<'a, 'b> {
              .required(true)
              .takes_value(true)
              .help("Sets the binary name"))
-        .arg(Arg::with_name("root")
-             .long("root")
+        .arg(Arg::with_name("bin")
+             .long("bin")
              .required(true)
              .takes_value(true)
-             .help("Sets the root directory"))
+             .help("Sets the path of the CLI binary"))
+        .arg(Arg::with_name("relative")
+             .long("relative")
+             .takes_value(true)
+             .help("Sets how to find the root directory based on the location of the bin"))
         .arg(Arg::with_name("commands")
              .allow_hyphen_values(true)
              .last(true)

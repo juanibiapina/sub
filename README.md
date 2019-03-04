@@ -22,15 +22,22 @@ The entry point in `bin/awesomecli` can then be:
 ```
 #!/usr/bin/env bash
 
-sub --name awesomecli --root "$0"/../.. -- "$@"
+sub --name awesomecli --bin "${BASH_SOURCE[0]}" --relative ".." -- "$@"
 ```
 
 The `--name` argument tells `sub` the name of the CLI. This is used when
-printing help information. The `--root` argument tells `sub` where to look for
-subcommands. `sub` picks up any files in a `libexec` directory inside root to
-use as subcommands. Note that root can be a relative path. `sub` will
-canonicalize this path later. Arguments for the subcommands themselves go after
-the `--`.
+printing help information.
+
+The `--bin` argument tells `sub` where the binary entry point is located.
+Usually this will just be `${BASH_SOURCE[0]}`. The `--relative` argument tells
+`sub` how to find the root of the CLI starting from the binary entry point.
+These two are separate arguments for cross platform compatibility. `sub` will
+canonalize the bin path before merging with the relative path and then canonalize
+again.
+
+After the root directory is determined, `sub` picks up any files in a `libexec`
+directory inside root to use as subcommands. Arguments for the subcommands
+themselves go after the `--`.
 
 With this setup, invoking `awesomecli` will display all available subcommands
 with associated help information. To invoke a subcommand, use:
