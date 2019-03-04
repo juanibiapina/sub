@@ -72,7 +72,10 @@ are indented.", // TODO add Args: section
             summary: "List available commands",
             help: "",
             func: |engine: &Engine, _args: &[String]| -> Result<i32> {
-                engine.display_commands();
+                for subcommand in engine.subcommands() {
+                    println!("{}", subcommand.name());
+                }
+
                 return Ok(0);
             },
         })
@@ -85,10 +88,10 @@ are indented.", // TODO add Args: section
             help: "",
             func: |engine: &Engine, args: &[String]| -> Result<i32> {
                 if args.len() != 1 {
-                    engine.display_commands();
-                    return Ok(0)
+                    SubCommand::internal_commands().invoke(engine, args)
+                } else {
+                    engine.display_completions(&args[0])
                 }
-                return engine.display_completions(&args[0]);
             },
         })
     }

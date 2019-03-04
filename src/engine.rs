@@ -66,7 +66,7 @@ impl Engine {
         }
     }
 
-    fn collect_subcommands(&self) -> Vec<SubCommand> {
+    pub fn subcommands(&self) -> Vec<SubCommand> {
         let libexec_path = self.libexec_path();
 
         let mut subcommands = Vec::new();
@@ -137,17 +137,11 @@ impl Engine {
         Ok(0)
     }
 
-    pub fn display_commands(&self) {
-        for subcommand in self.collect_subcommands() {
-            println!("{}", subcommand.name());
-        }
-    }
-
     pub fn display_help(&self) {
         println!("Usage: {} <command> [args]", self.name);
         println!();
 
-        let subcommands = self.collect_subcommands();
+        let subcommands = self.subcommands();
         if !subcommands.is_empty() {
             println!("Available commands:");
 
