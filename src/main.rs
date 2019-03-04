@@ -16,7 +16,14 @@ fn main() {
     let matches = app.get_matches();
 
     let name = matches.value_of("name").unwrap().to_owned();
-    let root = fs::canonicalize(matches.value_of("root").unwrap()).unwrap();
+    let root = match fs::canonicalize(matches.value_of("root").unwrap()) {
+        Ok(path) => path,
+        Err(e) => {
+            println!("Invalid root directory: {}", matches.value_of("root").unwrap());
+            println!("Original error: {}", e);
+            exit(1)
+        }
+    };
     let args = matches
         .values_of("commands")
         .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
