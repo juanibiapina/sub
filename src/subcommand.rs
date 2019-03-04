@@ -51,6 +51,10 @@ impl SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "help",
             summary: "Display help for a sub command",
+            help: "A command is considered documented if it starts with a comment block
+that has a 'Summary:', or 'Help:' section. The help
+section can span multiple lines as long as subsequent lines
+are indented.", // TODO add Args: section
             func: |engine: &Engine, args: &[String]| -> Result<i32> {
                 if args.is_empty() {
                     engine.display_help();
@@ -66,6 +70,7 @@ impl SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "commands",
             summary: "List available commands",
+            help: "",
             func: |engine: &Engine, _args: &[String]| -> Result<i32> {
                 engine.display_commands();
                 return Ok(0);
@@ -77,6 +82,7 @@ impl SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "completions",
             summary: "List completions for a sub command",
+            help: "",
             func: |engine: &Engine, args: &[String]| -> Result<i32> {
                 if args.len() != 1 {
                     engine.display_commands();
@@ -112,6 +118,33 @@ impl SubCommand {
         }
     }
 
+    pub fn help(&self) -> String {
+        let help = match self {
+            SubCommand::InternalCommand(c) => {
+                c.help.to_owned()
+            },
+            SubCommand::ExternalCommand(c) => {
+                parser::extract_help(&c.path)
+            },
+            SubCommand::NestedCommand(c) => {
+                let mut readme_path = c.path.clone();
+                readme_path.push("README");
+
+                if readme_path.exists() {
+                    parser::extract_help(&readme_path)
+                } else {
+                    "".to_owned()
+                }
+            },
+        };
+
+        if help.is_empty() {
+            self.summary()
+        } else {
+            help
+        }
+    }
+
     pub fn invoke(&self, engine: &Engine, args: &[String]) -> Result<i32> {
         match self {
             SubCommand::InternalCommand(c) => (c.func)(engine, args),
@@ -134,7 +167,14 @@ impl SubCommand {
                     None => Err(Error::SubCommandInterrupted),
                 }
             },
-            SubCommand::NestedCommand(_c) => panic!("TODO"),
+            SubCommand::NestedCommand(c) => {
+                if args.is_empty() {
+                    let help_command = SubCommand::internal_help();
+                    help_command.invoke(engine, &[c.name.to_owned()])
+                } else {
+                    Ok(0)
+                }
+            },
         }
     }
 }
@@ -142,6 +182,7 @@ impl SubCommand {
 pub struct InternalCommand {
     name: &'static str,
     summary: &'static str,
+    help: &'static str,
     func: fn(&Engine, &[String]) -> Result<i32>,
 }
 

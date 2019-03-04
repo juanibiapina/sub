@@ -92,26 +92,18 @@ impl Engine {
     }
 
     pub fn display_help_for_command(&self, command_name: &str) {
-        let command_path = self.command_path(command_name);
+        let subcommand = self.build_subcommand(command_name);
 
-        if !command_path.exists() {
-            self.display_unknown_subcommand(command_name);
-            return
-        }
+        if let Some(subcommand) = subcommand {
+            // TODO display usage information before help
 
-        let usage = parser::extract_usage(&command_path);
-        if !usage.is_empty() {
-            println!("Usage: {}\n", usage);
-        }
-
-        let help = parser::extract_help(&command_path);
-        if help.is_empty() {
-            let summary = parser::extract_summary(&command_path);
-            if !summary.is_empty() {
-                println!("{}", summary);
+            let help = subcommand.help();
+            if !help.is_empty() {
+                println!("{}", help);
             }
         } else {
-            println!("{}", help);
+            self.display_unknown_subcommand(command_name);
+            return
         }
     }
 

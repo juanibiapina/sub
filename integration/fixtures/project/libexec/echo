@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Usage: main echo <args>...
 # Summary: Echo arguments
 # Help: This is a complete test script with documentation.
 #
