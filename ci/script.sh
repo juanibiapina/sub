@@ -13,6 +13,7 @@ main() {
     cross test --target $TARGET
     cross test --target $TARGET --release
 
+    export RUST_BACKTRACE=1
     make integration
 }
 
