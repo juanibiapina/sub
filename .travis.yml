@@ -83,8 +83,8 @@ before_install:
 
 install:
   - sh ci/install.sh
-  - git clone --depth 1 https://github.com/sstephenson/bats.git
-  - export PATH="./bats/bin:$PATH"
+  - git clone --depth 1 https://github.com/bats-core/bats-core
+  - export PATH="./bats-core/bin:$PATH"
   - source ~/.cargo/env || true
 
 script:
