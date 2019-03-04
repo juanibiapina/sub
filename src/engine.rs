@@ -97,6 +97,12 @@ impl Engine {
         if let Some(subcommand) = subcommand {
             // TODO display usage information before help
 
+            let summary = subcommand.summary();
+            if !summary.is_empty() {
+                println!("{}", summary);
+                println!();
+            }
+
             let help = subcommand.help();
             if !help.is_empty() {
                 println!("{}", help);

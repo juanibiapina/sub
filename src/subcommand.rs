@@ -119,7 +119,7 @@ are indented.", // TODO add Args: section
     }
 
     pub fn help(&self) -> String {
-        let help = match self {
+        match self {
             SubCommand::InternalCommand(c) => {
                 c.help.to_owned()
             },
@@ -136,12 +136,6 @@ are indented.", // TODO add Args: section
                     "".to_owned()
                 }
             },
-        };
-
-        if help.is_empty() {
-            self.summary()
-        } else {
-            help
         }
     }
 

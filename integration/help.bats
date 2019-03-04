@@ -27,7 +27,9 @@ Use 'main help <command>' for information on a specific command."
   run main help echo
 
   assert_success
-  assert_output "This is a complete test script with documentation.
+  assert_output "Echo arguments
+
+This is a complete test script with documentation.
 
 The help section can span multiple lines."
 }
