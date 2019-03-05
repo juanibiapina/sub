@@ -142,7 +142,7 @@ are indented.", // TODO add Args: section
         }
     }
 
-    pub fn invoke(&self, engine: &Engine, args: Vec<String>) -> Result<i32> {
+    pub fn invoke(&self, engine: &Engine, mut args: Vec<String>) -> Result<i32> {
         match self {
             SubCommand::InternalCommand(c) => (c.func)(engine, args),
             SubCommand::ExternalCommand(c) => {
@@ -171,7 +171,25 @@ are indented.", // TODO add Args: section
                     args.push(c.name.to_owned());
                     help_command.invoke(engine, args)
                 } else {
-                    Ok(0) // TODO recurse
+                    let command_args = {
+                        if args.len() > 1 {
+                            args.drain(1..).collect()
+                        } else {
+                            Vec::new()
+                        }
+                    };
+                    let command_name = args.pop().unwrap();
+
+                    let mut path = c.path.clone();
+                    path.push(&command_name);
+
+                    match SubCommand::from_path(path) {
+                        Some(subcommand) => subcommand.invoke(engine, command_args),
+                        None => {
+                            engine.display_unknown_subcommand(&command_name);
+                            return Err(Error::UnknownSubCommand);
+                        },
+                    }
                 }
             },
         }

@@ -10,3 +10,21 @@ load test_helper
   assert_success
   assert_output "$(main help nested)"
 }
+
+@test "nested: with a non existent subcommand, displays error message" {
+  fixture
+
+  run main nested not-found
+
+  assert_failure
+  assert_output "main: no such sub command 'not-found'"
+}
+
+@test "nested: with a subcommand, runs it" {
+  fixture
+
+  run main nested echo arg1 arg2
+
+  assert_success
+  assert_output "arg1 arg2"
+}

@@ -62,7 +62,11 @@ impl Engine {
             "help" => Some(SubCommand::internal_help()),
             "commands" => Some(SubCommand::internal_commands()),
             "completions" => Some(SubCommand::internal_completions()),
-            _ => SubCommand::from_path(self.command_path(name)),
+            _ => {
+                let mut path = self.libexec_path();
+                path.push(name);
+                SubCommand::from_path(path)
+            },
         }
     }
 
