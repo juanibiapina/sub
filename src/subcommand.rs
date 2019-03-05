@@ -55,7 +55,7 @@ impl SubCommand {
 that has a 'Summary:', or 'Help:' section. The help
 section can span multiple lines as long as subsequent lines
 are indented.", // TODO add Args: section
-            func: |engine: &Engine, args: &[String]| -> Result<i32> {
+            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
                 if args.is_empty() {
                     engine.display_help();
                 } else {
@@ -71,7 +71,7 @@ are indented.", // TODO add Args: section
             name: "commands",
             summary: "List available commands",
             help: "",
-            func: |engine: &Engine, _args: &[String]| -> Result<i32> {
+            func: |engine: &Engine, _args: Vec<String>| -> Result<i32> {
                 for subcommand in engine.subcommands() {
                     println!("{}", subcommand.name());
                 }
@@ -86,7 +86,7 @@ are indented.", // TODO add Args: section
             name: "completions",
             summary: "List completions for a sub command",
             help: "",
-            func: |engine: &Engine, args: &[String]| -> Result<i32> {
+            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
                 if args.len() != 1 {
                     SubCommand::internal_commands().invoke(engine, args)
                 } else {
@@ -142,7 +142,7 @@ are indented.", // TODO add Args: section
         }
     }
 
-    pub fn invoke(&self, engine: &Engine, args: &[String]) -> Result<i32> {
+    pub fn invoke(&self, engine: &Engine, args: Vec<String>) -> Result<i32> {
         match self {
             SubCommand::InternalCommand(c) => (c.func)(engine, args),
             SubCommand::ExternalCommand(c) => {
@@ -167,7 +167,9 @@ are indented.", // TODO add Args: section
             SubCommand::NestedCommand(c) => {
                 if args.is_empty() {
                     let help_command = SubCommand::internal_help();
-                    help_command.invoke(engine, &[c.name.to_owned()])
+                    let mut args = Vec::new();
+                    args.push(c.name.to_owned());
+                    help_command.invoke(engine, args)
                 } else {
                     Ok(0) // TODO recurse
                 }
@@ -180,7 +182,7 @@ pub struct InternalCommand {
     name: &'static str,
     summary: &'static str,
     help: &'static str,
-    func: fn(&Engine, &[String]) -> Result<i32>,
+    func: fn(&Engine, Vec<String>) -> Result<i32>,
 }
 
 pub struct ExternalCommand {

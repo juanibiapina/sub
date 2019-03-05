@@ -50,7 +50,7 @@ impl Engine {
         let subcommand = self.subcommand(&command_name);
 
         if let Some(subcommand) = subcommand {
-            subcommand.invoke(self, &command_args)
+            subcommand.invoke(self, command_args)
         } else {
             self.display_unknown_subcommand(&command_name);
             Err(Error::UnknownSubCommand)
