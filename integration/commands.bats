@@ -13,5 +13,6 @@ echo
 env
 error
 help
-nested"
+nested
+no-doc"
 }

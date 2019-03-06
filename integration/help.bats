@@ -17,6 +17,7 @@ Available commands:
     error       Return with error 4
     help        Display help for a sub command
     nested      Run a nested command
+    no-doc      
 
 Use 'main help <command>' for information on a specific command."
 }
