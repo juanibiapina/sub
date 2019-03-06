@@ -113,22 +113,31 @@ impl Engine {
         }
     }
 
-    pub fn subcommands(&self) -> Vec<SubCommand> {
-        let libexec_path = self.libexec_path();
+    pub fn subcommands(&self, names: Vec<String>) -> Vec<SubCommand> {
+        let include_internal = names.is_empty();
+
+        let mut libexec_path = self.libexec_path();
+        libexec_path.extend(&names);
 
         let mut subcommands = Vec::new();
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(libexec_path).unwrap() {
                 let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
-                if let Ok(subcommand) = self.external_subcommand(vec![name]) {
+
+                let mut names = names.clone();
+                names.push(name);
+
+                if let Ok(subcommand) = self.external_subcommand(names) {
                     subcommands.push(subcommand);
                 }
             }
         }
 
-        subcommands.push(SubCommand::internal_help(Vec::new()));
-        subcommands.push(SubCommand::internal_commands(Vec::new()));
+        if include_internal {
+            subcommands.push(SubCommand::internal_help(Vec::new()));
+            subcommands.push(SubCommand::internal_commands(Vec::new()));
+        }
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
@@ -167,7 +176,7 @@ impl Engine {
         println!("Usage: {} <command> [args]", self.name);
         println!();
 
-        let subcommands = self.subcommands();
+        let subcommands = self.subcommands(Vec::new());
         if !subcommands.is_empty() {
             println!("Available commands:");
 

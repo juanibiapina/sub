@@ -16,3 +16,22 @@ help
 nested
 no-doc"
 }
+
+@test "commands: lists nested commands" {
+  fixture
+
+  run main commands nested
+
+  assert_success
+  assert_output "double
+echo"
+}
+
+@test "commands: lists nested subcommands" {
+  fixture
+
+  run main commands nested double
+
+  assert_success
+  assert_output "echo"
+}

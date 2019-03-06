@@ -50,8 +50,8 @@ are indented.", // TODO add Args: section
             summary: "List available commands",
             help: "",
             args,
-            func: |engine: &Engine, _args: Vec<String>| -> Result<i32> {
-                for subcommand in engine.subcommands() {
+            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
+                for subcommand in engine.subcommands(args) {
                     println!("{}", subcommand.name());
                 }
 
