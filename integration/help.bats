@@ -51,3 +51,55 @@ The help section can span multiple lines."
   assert_failure
   assert_output "main: no such sub command 'not-found'"
 }
+
+@test "help: displays help for a nested command" {
+  fixture
+
+  run main help nested
+
+  assert_success
+  assert_output "Run a nested command
+
+Documentation for this group.
+
+Extended documentation."
+}
+
+@test "help: displays help for a nested subcommand" {
+  fixture
+
+  run main help nested echo
+
+  assert_success
+  assert_output "Echo arguments 2
+
+This is a complete test script with documentation.
+
+The help section can span multiple lines."
+}
+
+@test "help: displays help for a double nested command" {
+  fixture
+
+  run main help nested double
+
+  assert_success
+  assert_output "Run a double nested command
+
+Documentation for this double nested group.
+
+Extended documentation."
+}
+
+@test "help: displays help for a double nested sub command" {
+  fixture
+
+  run main help nested double echo
+
+  assert_success
+  assert_output "Echo arguments 3
+
+This is a complete test script with documentation.
+
+The help section can span multiple lines."
+}
