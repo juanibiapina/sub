@@ -43,11 +43,11 @@ The help section can span multiple lines."
   assert_output "Return with error 4"
 }
 
-@test "help: fails gracefully with requested command doesn't exist" {
+@test "help: fails gracefully when requested command doesn't exist" {
   fixture
 
   run main help not-found
 
-  assert_success
+  assert_failure
   assert_output "main: no such sub command 'not-found'"
 }

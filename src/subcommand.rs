@@ -24,7 +24,20 @@ are indented.", // TODO add Args: section
                 if args.is_empty() {
                     engine.display_help();
                 } else {
-                    engine.display_help_for_command(&args[0]);
+                    let subcommand = engine.subcommand(args)?;
+
+                    // TODO display usage information before help
+
+                    let summary = subcommand.summary();
+                    if !summary.is_empty() {
+                        println!("{}", summary);
+                        println!();
+                    }
+
+                    let help = subcommand.help();
+                    if !help.is_empty() {
+                        println!("{}", help);
+                    }
                 }
                 return Ok(0);
             },

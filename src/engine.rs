@@ -35,7 +35,7 @@ impl Engine {
         self.subcommand(self.args.clone())?.invoke(self)
     }
 
-    fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
+    pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
         if args.is_empty() {
             return Err(Error::NoSubCommand);
         }
@@ -137,28 +137,6 @@ impl Engine {
 
     pub fn display_unknown_subcommand(&self, name: &str) {
         println!("{}: no such sub command '{}'", self.name, name);
-    }
-
-    pub fn display_help_for_command(&self, command_name: &str) {
-        let subcommand = self.subcommand(vec![command_name.to_owned()]);
-
-        if let Ok(subcommand) = subcommand {
-            // TODO display usage information before help
-
-            let summary = subcommand.summary();
-            if !summary.is_empty() {
-                println!("{}", summary);
-                println!();
-            }
-
-            let help = subcommand.help();
-            if !help.is_empty() {
-                println!("{}", help);
-            }
-        } else {
-            self.display_unknown_subcommand(command_name);
-            return
-        }
     }
 
     pub fn display_completions(&self, command_name: &str) -> Result<i32> {

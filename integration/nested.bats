@@ -28,3 +28,12 @@ load test_helper
   assert_success
   assert_output "arg1 arg2"
 }
+
+@test "nested: with a nested subcommand, displays help" {
+  fixture
+
+  run main nested double
+
+  assert_success
+  assert_output "$(main help nested double)"
+}
