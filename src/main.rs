@@ -46,9 +46,17 @@ fn main() {
 
     match sub.run() {
         Ok(code) => exit(code),
-        Err(Error::NoSubCommand) => exit(0),
+        Err(Error::NoSubCommand) => {
+            sub.display_help();
+            exit(0);
+        },
+        Err(Error::NoCompletions) => exit(1),
         Err(Error::SubCommandInterrupted) => exit(1),
-        Err(Error::UnknownSubCommand) => exit(1),
+        Err(Error::NonExecutable(_)) => exit(1),
+        Err(Error::UnknownSubCommand(name)) => {
+            sub.display_unknown_subcommand(&name);
+            exit(1);
+        },
     }
 }
 

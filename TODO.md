@@ -1,3 +1,7 @@
+# Bug
+
+- When command is not documented
+
 # Features
 
 - add support for nested commands as directories

@@ -1,8 +1,9 @@
 use std::fs;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::subcommand::SubCommand;
+use crate::subcommand::{SubCommand, ExternalCommand};
 use crate::error::Result;
 use crate::error::Error;
 use crate::parser;
@@ -31,42 +32,84 @@ impl Engine {
     }
 
     pub fn run(&self) -> Result<i32> {
-        if self.args.is_empty() {
-            self.display_help();
+        self.subcommand(self.args.clone())?.invoke(self)
+    }
+
+    fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
+        if args.is_empty() {
             return Err(Error::NoSubCommand);
         }
 
-        let mut args = self.args.clone();
+        let name = &args[0];
 
-        let command_args = {
-            if args.len() > 1 {
-                args.drain(1..).collect()
-            } else {
-                Vec::new()
-            }
-        };
-        let command_name = args.pop().unwrap();
-
-        let subcommand = self.subcommand(&command_name);
-
-        if let Some(subcommand) = subcommand {
-            subcommand.invoke(self, command_args)
-        } else {
-            self.display_unknown_subcommand(&command_name);
-            Err(Error::UnknownSubCommand)
+        match name.as_ref() {
+            "help" => Ok(SubCommand::internal_help(args.split_off(1))),
+            "commands" => Ok(SubCommand::internal_commands(args.split_off(1))),
+            "completions" => Ok(SubCommand::internal_completions(args.split_off(1))),
+            _ => {
+                self.external_subcommand(args)
+            },
         }
     }
 
-    fn subcommand(&self, name: &str) -> Option<SubCommand> {
-        match name {
-            "help" => Some(SubCommand::internal_help()),
-            "commands" => Some(SubCommand::internal_commands()),
-            "completions" => Some(SubCommand::internal_completions()),
-            _ => {
-                let mut path = self.libexec_path();
-                path.push(name);
-                SubCommand::from_path(path)
-            },
+    fn external_subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
+        if args.is_empty() {
+            return Err(Error::NoSubCommand);
+        }
+
+        let mut path = self.libexec_path();
+        let mut names = Vec::new();
+
+        loop {
+            let head = args[0].clone();
+
+            if head.starts_with('.') {
+                return Err(Error::UnknownSubCommand(head.to_owned()));
+            }
+
+            path.push(&head);
+
+            if !path.exists() {
+                return Err(Error::UnknownSubCommand(head));
+            }
+
+            names.push(head.to_owned());
+
+            args = args.split_off(1);
+
+            if args.len() == 0 {
+                if path.is_dir() {
+                    return Ok(SubCommand::ExternalCommand(ExternalCommand{
+                        names,
+                        path,
+                        args,
+                    }));
+                }
+
+                if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
+                    return Err(Error::NonExecutable(head.to_owned()));
+                }
+
+                return Ok(SubCommand::ExternalCommand(ExternalCommand{
+                    names,
+                    path,
+                    args,
+                }));
+            }
+
+            if path.is_dir() {
+                continue;
+            }
+
+            if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
+                return Err(Error::NonExecutable(head.to_owned()));
+            }
+
+            return Ok(SubCommand::ExternalCommand(ExternalCommand{
+                names,
+                path,
+                args,
+            }));
         }
     }
 
@@ -77,14 +120,15 @@ impl Engine {
 
         if libexec_path.is_dir() {
             for entry in fs::read_dir(libexec_path).unwrap() {
-                if let Some(subcommand)  = SubCommand::from_path(entry.unwrap().path()) {
+                let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
+                if let Ok(subcommand) = self.external_subcommand(vec![name]) {
                     subcommands.push(subcommand);
                 }
             }
         }
 
-        subcommands.push(SubCommand::internal_help());
-        subcommands.push(SubCommand::internal_commands());
+        subcommands.push(SubCommand::internal_help(Vec::new()));
+        subcommands.push(SubCommand::internal_commands(Vec::new()));
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
@@ -96,9 +140,9 @@ impl Engine {
     }
 
     pub fn display_help_for_command(&self, command_name: &str) {
-        let subcommand = self.subcommand(command_name);
+        let subcommand = self.subcommand(vec![command_name.to_owned()]);
 
-        if let Some(subcommand) = subcommand {
+        if let Ok(subcommand) = subcommand {
             // TODO display usage information before help
 
             let summary = subcommand.summary();
@@ -121,7 +165,7 @@ impl Engine {
         let command_path = self.command_path(command_name);
 
         if !command_path.exists() {
-            return Err(Error::UnknownSubCommand);
+            return Err(Error::NoCompletions);
         }
 
         if parser::provides_completions(&command_path) {

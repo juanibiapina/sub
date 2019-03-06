@@ -1,4 +1,3 @@
-use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -9,45 +8,10 @@ use crate::engine::Engine;
 pub enum SubCommand {
     InternalCommand(InternalCommand),
     ExternalCommand(ExternalCommand),
-    NestedCommand(NestedCommand),
 }
 
 impl SubCommand {
-    fn from_dir(path: PathBuf) -> Option<SubCommand> {
-        let name = path.file_name().unwrap().to_str().unwrap().to_owned();
-
-        Some(SubCommand::NestedCommand(NestedCommand {
-            name,
-            path,
-        }))
-    }
-
-    pub fn from_path(path: PathBuf) -> Option<SubCommand> {
-        if !path.exists() {
-            return None;
-        }
-
-        let name = path.file_name().unwrap().to_str().unwrap().to_string();
-
-        if name.starts_with('.') {
-            return None;
-        }
-
-        if path.is_dir() {
-            return SubCommand::from_dir(path);
-        }
-
-        if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
-            return None;
-        }
-
-        Some(SubCommand::ExternalCommand(ExternalCommand {
-            name,
-            path,
-        }))
-    }
-
-    pub fn internal_help() -> SubCommand {
+    pub fn internal_help(args: Vec<String>) -> SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "help",
             summary: "Display help for a sub command",
@@ -55,6 +19,7 @@ impl SubCommand {
 that has a 'Summary:', or 'Help:' section. The help
 section can span multiple lines as long as subsequent lines
 are indented.", // TODO add Args: section
+            args,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
                 if args.is_empty() {
                     engine.display_help();
@@ -66,11 +31,12 @@ are indented.", // TODO add Args: section
         })
     }
 
-    pub fn internal_commands() -> SubCommand {
+    pub fn internal_commands(args: Vec<String>) -> SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "commands",
             summary: "List available commands",
             help: "",
+            args,
             func: |engine: &Engine, _args: Vec<String>| -> Result<i32> {
                 for subcommand in engine.subcommands() {
                     println!("{}", subcommand.name());
@@ -81,14 +47,15 @@ are indented.", // TODO add Args: section
         })
     }
 
-    pub fn internal_completions() -> SubCommand {
+    pub fn internal_completions(args: Vec<String>) -> SubCommand {
         SubCommand::InternalCommand(InternalCommand{
             name: "completions",
             summary: "List completions for a sub command",
             help: "",
+            args,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
                 if args.len() != 1 {
-                    SubCommand::internal_commands().invoke(engine, args)
+                    SubCommand::internal_commands(args).invoke(engine)
                 } else {
                     engine.display_completions(&args[0])
                 }
@@ -99,23 +66,25 @@ are indented.", // TODO add Args: section
     pub fn name(&self) -> &str {
         match self {
             SubCommand::InternalCommand(c) => &c.name,
-            SubCommand::ExternalCommand(c) => &c.name,
-            SubCommand::NestedCommand(c) => &c.name,
+            SubCommand::ExternalCommand(c) => c.names.last().unwrap(),
         }
     }
 
     pub fn summary(&self) -> String {
         match self {
             SubCommand::InternalCommand(c) => c.summary.to_owned(),
-            SubCommand::ExternalCommand(c) => parser::extract_summary(&c.path),
-            SubCommand::NestedCommand(c) => {
-                let mut readme_path = c.path.clone();
-                readme_path.push("README");
+            SubCommand::ExternalCommand(c) => {
+                if c.path.is_dir() {
+                    let mut readme_path = c.path.clone();
+                    readme_path.push("README");
 
-                if readme_path.exists() {
-                    parser::extract_summary(&readme_path)
+                    if readme_path.exists() {
+                        parser::extract_summary(&readme_path)
+                    } else {
+                        "".to_owned()
+                    }
                 } else {
-                    "".to_owned()
+                    parser::extract_summary(&c.path)
                 }
             },
         }
@@ -127,68 +96,45 @@ are indented.", // TODO add Args: section
                 c.help.to_owned()
             },
             SubCommand::ExternalCommand(c) => {
-                parser::extract_help(&c.path)
-            },
-            SubCommand::NestedCommand(c) => {
-                let mut readme_path = c.path.clone();
-                readme_path.push("README");
+                if c.path.is_dir() {
+                    let mut readme_path = c.path.clone();
+                    readme_path.push("README");
 
-                if readme_path.exists() {
-                    parser::extract_help(&readme_path)
+                    if readme_path.exists() {
+                        parser::extract_help(&readme_path)
+                    } else {
+                        "".to_owned()
+                    }
                 } else {
-                    "".to_owned()
+                    parser::extract_help(&c.path)
                 }
             },
         }
     }
 
-    pub fn invoke(&self, engine: &Engine, mut args: Vec<String>) -> Result<i32> {
+    pub fn invoke(&self, engine: &Engine) -> Result<i32> {
         match self {
-            SubCommand::InternalCommand(c) => (c.func)(engine, args),
+            SubCommand::InternalCommand(c) => (c.func)(engine, c.args.clone()),
             SubCommand::ExternalCommand(c) => {
                 if !c.path.exists() {
-                    engine.display_unknown_subcommand(&c.name);
-                    return Err(Error::UnknownSubCommand);
+                    return Err(Error::UnknownSubCommand(c.names.last().unwrap().to_owned()));
                 }
 
-                let mut command = Command::new(&c.path);
-
-                command.args(args);
-
-                command.env(format!("_{}_ROOT", engine.name().to_uppercase()), engine.root());
-
-                let status = command.status().unwrap();
-
-                match status.code() {
-                    Some(code) => Ok(code),
-                    None => Err(Error::SubCommandInterrupted),
-                }
-            },
-            SubCommand::NestedCommand(c) => {
-                if args.is_empty() {
-                    let help_command = SubCommand::internal_help();
-                    let mut args = Vec::new();
-                    args.push(c.name.to_owned());
-                    help_command.invoke(engine, args)
+                if c.path.is_dir() {
+                    let help_command = SubCommand::internal_help(c.names.clone());
+                    help_command.invoke(engine)
                 } else {
-                    let command_args = {
-                        if args.len() > 1 {
-                            args.drain(1..).collect()
-                        } else {
-                            Vec::new()
-                        }
-                    };
-                    let command_name = args.pop().unwrap();
+                    let mut command = Command::new(&c.path);
 
-                    let mut path = c.path.clone();
-                    path.push(&command_name);
+                    command.args(&c.args);
 
-                    match SubCommand::from_path(path) {
-                        Some(subcommand) => subcommand.invoke(engine, command_args),
-                        None => {
-                            engine.display_unknown_subcommand(&command_name);
-                            return Err(Error::UnknownSubCommand);
-                        },
+                    command.env(format!("_{}_ROOT", engine.name().to_uppercase()), engine.root());
+
+                    let status = command.status().unwrap();
+
+                    match status.code() {
+                        Some(code) => Ok(code),
+                        None => Err(Error::SubCommandInterrupted),
                     }
                 }
             },
@@ -200,15 +146,12 @@ pub struct InternalCommand {
     name: &'static str,
     summary: &'static str,
     help: &'static str,
+    args: Vec<String>,
     func: fn(&Engine, Vec<String>) -> Result<i32>,
 }
 
 pub struct ExternalCommand {
-    name: String,
-    path: PathBuf,
-}
-
-pub struct NestedCommand {
-    name: String,
-    path: PathBuf,
+    pub names: Vec<String>,
+    pub path: PathBuf,
+    pub args: Vec<String>,
 }
