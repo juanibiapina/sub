@@ -6,6 +6,7 @@ use crate::parser;
 use crate::engine::Engine;
 
 pub enum SubCommand {
+    TopLevelCommand(TopLevelCommand),
     InternalCommand(InternalCommand),
     ExternalCommand(ExternalCommand),
 }
@@ -78,6 +79,7 @@ are indented.", // TODO add Args: section
 
     pub fn name(&self) -> &str {
         match self {
+            SubCommand::TopLevelCommand(c) => &c.name,
             SubCommand::InternalCommand(c) => &c.name,
             SubCommand::ExternalCommand(c) => c.names.last().unwrap(),
         }
@@ -85,6 +87,7 @@ are indented.", // TODO add Args: section
 
     pub fn summary(&self) -> String {
         match self {
+            SubCommand::TopLevelCommand(_) => "".to_owned(),
             SubCommand::InternalCommand(c) => c.summary.to_owned(),
             SubCommand::ExternalCommand(c) => {
                 if c.path.is_dir() {
@@ -105,6 +108,7 @@ are indented.", // TODO add Args: section
 
     pub fn help(&self) -> String {
         match self {
+            SubCommand::TopLevelCommand(_) => "".to_owned(),
             SubCommand::InternalCommand(c) => {
                 c.help.to_owned()
             },
@@ -127,6 +131,10 @@ are indented.", // TODO add Args: section
 
     pub fn invoke(&self, engine: &Engine) -> Result<i32> {
         match self {
+            SubCommand::TopLevelCommand(_) => {
+                let help_command = SubCommand::internal_help(Vec::new());
+                help_command.invoke(engine)
+            },
             SubCommand::InternalCommand(c) => (c.func)(engine, c.args.clone()),
             SubCommand::ExternalCommand(c) => {
                 if !c.path.exists() {
@@ -153,6 +161,11 @@ are indented.", // TODO add Args: section
             },
         }
     }
+}
+
+pub struct TopLevelCommand {
+    pub name: String,
+    pub path: PathBuf,
 }
 
 pub struct InternalCommand {

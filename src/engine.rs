@@ -3,7 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::subcommand::{SubCommand, ExternalCommand};
+use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand};
 use crate::error::Result;
 use crate::error::Error;
 use crate::parser;
@@ -37,7 +37,10 @@ impl Engine {
 
     pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
         if args.is_empty() {
-            return Err(Error::NoSubCommand);
+            return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
+                name: self.name.to_owned(),
+                path: self.libexec_path(),
+            }));
         }
 
         let name = &args[0];
@@ -54,7 +57,10 @@ impl Engine {
 
     fn external_subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
         if args.is_empty() {
-            return Err(Error::NoSubCommand);
+            return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
+                name: self.name.to_owned(),
+                path: self.libexec_path(),
+            }));
         }
 
         let mut path = self.libexec_path();

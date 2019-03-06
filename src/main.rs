@@ -46,10 +46,6 @@ fn main() {
 
     match sub.run() {
         Ok(code) => exit(code),
-        Err(Error::NoSubCommand) => {
-            sub.display_help();
-            exit(0);
-        },
         Err(Error::NoCompletions) => exit(1),
         Err(Error::SubCommandInterrupted) => exit(1),
         Err(Error::NonExecutable(_)) => exit(1),
