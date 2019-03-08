@@ -83,7 +83,7 @@ impl Engine {
 
             args = args.split_off(1);
 
-            if args.len() == 0 {
+            if args.is_empty() {
                 if path.is_dir() {
                     return Ok(SubCommand::ExternalCommand(ExternalCommand{
                         names,

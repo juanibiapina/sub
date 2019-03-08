@@ -40,7 +40,7 @@ are indented.", // TODO add Args: section
 
                 let subcommands = engine.subcommands(args.clone());
                 if !subcommands.is_empty() {
-                    println!("");
+                    println!();
                     println!("Available subcommands:");
 
                     let max_width = subcommands
@@ -79,7 +79,7 @@ are indented.", // TODO add Args: section
                     println!("{}", subcommand.name());
                 }
 
-                return Ok(0);
+                Ok(0)
             },
         })
     }
