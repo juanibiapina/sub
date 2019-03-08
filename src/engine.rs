@@ -1,12 +1,10 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand};
 use crate::error::Result;
 use crate::error::Error;
-use crate::parser;
 
 pub struct Engine {
     name: String,
@@ -159,30 +157,6 @@ impl Engine {
         println!("{}: no such sub command '{}'", self.name, name);
     }
 
-    pub fn display_completions(&self, command_name: &str) -> Result<i32> {
-        let command_path = self.command_path(command_name);
-
-        if !command_path.exists() {
-            return Err(Error::NoCompletions);
-        }
-
-        if parser::provides_completions(&command_path) {
-            let mut command = Command::new(command_path);
-
-            command.arg("--complete");
-            command.env(format!("_{}_ROOT", self.name.to_uppercase()), &self.root);
-
-            let status = command.status().unwrap();
-
-            return match status.code() {
-                Some(code) => Ok(code),
-                None => Err(Error::SubCommandInterrupted),
-            };
-        }
-
-        Ok(0)
-    }
-
     pub fn display_help(&self) {
         println!("Usage: {} <command> [args]", self.name);
         println!();
@@ -208,12 +182,6 @@ impl Engine {
         }
 
         println!("Use '{} help <command>' for information on a specific command.", self.name);
-    }
-
-    fn command_path(&self, command_name: &str) -> PathBuf {
-        let mut libexec_path = self.libexec_path();
-        libexec_path.push(command_name);
-        libexec_path
     }
 
     fn libexec_path(&self) -> PathBuf {

@@ -1,12 +1,5 @@
-# Bug
-
-- When command is not documented
-
 # Features
 
-- add support for nested commands as directories
-  - add support for nested commands
-  - add support for nested completions
 - display completions for internal commands
 - generate usage information from command args
 - generate completions

@@ -38,3 +38,31 @@ comp2"
   assert_success
   assert_output ""
 }
+
+@test "completions: displays nested commands" {
+  fixture
+
+  run main completions nested
+
+  assert_success
+  assert_output "$(main commands nested)"
+}
+
+@test "completions: displays double nested commands" {
+  fixture
+
+  run main completions nested double
+
+  assert_success
+  assert_output "$(main commands nested double)"
+}
+
+@test "completions: displays double nested subcommands" {
+  fixture
+
+  run main completions nested double echo
+
+  assert_success
+  assert_output "compn1
+compn2"
+}

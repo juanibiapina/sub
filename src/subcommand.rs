@@ -71,10 +71,10 @@ are indented.", // TODO add Args: section
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                if args.len() != 1 {
-                    SubCommand::internal_commands(engine, args).invoke()
+                if let Ok(subcommand) = engine.subcommand(args) {
+                    subcommand.completions()
                 } else {
-                    engine.display_completions(&args[0])
+                    Ok(1)
                 }
             },
         })
@@ -128,6 +128,41 @@ are indented.", // TODO add Args: section
                 } else {
                     parser::extract_help(&c.path)
                 }
+            },
+        }
+    }
+
+    pub fn completions(&self) -> Result<i32> {
+        match self {
+            SubCommand::TopLevelCommand(c) => {
+                let commands = SubCommand::internal_commands(c.engine, Vec::new());
+                commands.invoke()
+            },
+            SubCommand::InternalCommand(_) => Ok(0), // TODO
+            SubCommand::ExternalCommand(c) => {
+                if c.path.is_dir() {
+                    let commands = SubCommand::internal_commands(c.engine, c.names.clone());
+                    commands.invoke()
+                } else {
+                    if parser::provides_completions(&c.path) {
+                        let mut command = Command::new(&c.path);
+
+                        command.arg("--complete");
+                        command.env(format!("_{}_ROOT", c.engine.name().to_uppercase()), c.engine.root());
+
+                        let status = command.status().unwrap();
+
+                        return match status.code() {
+                            Some(code) => Ok(code),
+                            None => Err(Error::SubCommandInterrupted),
+                        };
+                    }
+
+                    Ok(0)
+
+
+                }
+
             },
         }
     }

@@ -9,8 +9,8 @@ set -e
 
 # Provide completions
 if [ "$1" = "--complete" ]; then
-  echo comp1
-  echo comp2
+  echo compn1
+  echo compn2
   exit
 fi
 
