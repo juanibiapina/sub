@@ -10,7 +10,7 @@ load test_helper
   assert_success
   assert_output "Usage: main <command> [args]
 
-Available commands:
+Available subcommands:
     commands    List available commands
     echo        Echo arguments
     env         Print the value of an environment variable
@@ -63,7 +63,13 @@ The help section can span multiple lines."
 
 Documentation for this group.
 
-Extended documentation."
+Extended documentation.
+
+Available subcommands:
+    double    Run a double nested command
+    echo      Echo arguments 2
+
+Use 'main help nested <command>' for information on a specific command."
 }
 
 @test "help: displays help for a nested subcommand" {
@@ -89,7 +95,12 @@ The help section can span multiple lines."
 
 Documentation for this double nested group.
 
-Extended documentation."
+Extended documentation.
+
+Available subcommands:
+    echo    Echo arguments 3
+
+Use 'main help nested double <command>' for information on a specific command."
 }
 
 @test "help: displays help for a double nested sub command" {

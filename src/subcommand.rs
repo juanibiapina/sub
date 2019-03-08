@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::process::Command;
-use std::fmt::Write;
 
 use crate::error::{Error, Result};
 use crate::parser;
@@ -24,7 +23,7 @@ are indented.", // TODO add Args: section
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                let subcommand = engine.subcommand(args)?;
+                let subcommand = engine.subcommand(args.clone())?;
 
                 // TODO display usage information before help
 
@@ -37,6 +36,30 @@ are indented.", // TODO add Args: section
                 let help = subcommand.help();
                 if !help.is_empty() {
                     println!("{}", help);
+                }
+
+                let subcommands = engine.subcommands(args.clone());
+                if !subcommands.is_empty() {
+                    println!("");
+                    println!("Available subcommands:");
+
+                    let max_width = subcommands
+                        .iter()
+                        .map(|subcommand| subcommand.name())
+                        .map(|name: &str| name.len())
+                        .max()
+                        .unwrap();
+
+                    let width = max_width + 4;
+
+                    for subcommand in subcommands {
+                        println!("    {:width$}{}", subcommand.name(), subcommand.summary(), width = width);
+                    }
+
+                    println!();
+                    let mut cs = args.clone();
+                    cs.push("<command>".to_owned());
+                    println!("Use '{} help {}' for information on a specific command.", engine.name(), cs.join(" "));
                 }
 
                 Ok(0)
@@ -110,34 +133,7 @@ are indented.", // TODO add Args: section
     pub fn help(&self) -> String {
         match self {
             SubCommand::TopLevelCommand(c) => {
-                let mut help = String::new();
-
-                writeln!(&mut help, "Usage: {} <command> [args]", c.name).unwrap();
-                writeln!(&mut help).unwrap();
-
-                let subcommands = c.engine.subcommands(Vec::new());
-                if !subcommands.is_empty() {
-                    writeln!(&mut help, "Available commands:").unwrap();
-
-                    let max_width = subcommands
-                        .iter()
-                        .map(|subcommand| subcommand.name())
-                        .map(|name: &str| name.len())
-                        .max()
-                        .unwrap();
-
-                    let width = max_width + 4;
-
-                    for subcommand in subcommands {
-                        writeln!(&mut help, "    {:width$}{}", subcommand.name(), subcommand.summary(), width = width).unwrap();
-                    }
-
-                    writeln!(&mut help).unwrap();
-                }
-
-                writeln!(&mut help, "Use '{} help <command>' for information on a specific command.", c.name).unwrap();
-
-                help
+                format!("Usage: {} <command> [args]", c.name)
             },
             SubCommand::InternalCommand(c) => {
                 c.help.to_owned()
