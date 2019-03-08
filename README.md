@@ -14,7 +14,9 @@ directory structure:
 └── libexec
     ├── list
     ├── new
-    └── open
+    ├── open
+    └── nested
+        └── command
 ```
 
 The entry point in `bin/awesomecli` can then be:
@@ -35,15 +37,21 @@ These two are separate arguments for cross platform compatibility. `sub` will
 canonalize the bin path before merging with the relative path and then canonalize
 again.
 
-After the root directory is determined, `sub` picks up any files in a `libexec`
-directory inside root to use as subcommands. Arguments for the subcommands
-themselves go after the `--`.
+After the root directory is determined, `sub` picks up any executable files in
+a `libexec` directory inside root to use as subcommands. Directories create
+nested subcommands. Arguments for the subcommands themselves go after the `--`.
 
 With this setup, invoking `awesomecli` will display all available subcommands
 with associated help information. To invoke a subcommand, use:
 
 ```
-$ awesomecli <commandname> <args>
+$ awesomecli <subcommandname> <args>
+```
+
+Or to invoke a nested subcommand:
+
+```
+$ awesomecli nested command
 ```
 
 ## Documenting commands
@@ -54,8 +62,8 @@ To get help for a command, use the built in `help` command:
 $ awesomecli help <commandname>
 ```
 
-In order to display help information, `sub` looks for special comments in the
-beginning of each file. An example documented command:
+In order to display help information, `sub` looks for special comments in each
+file. An example documented command:
 
 ```sh
 #!/usr/bin/env bash
@@ -64,6 +72,9 @@ beginning of each file. An example documented command:
 #
 # The help section can span multiple lines.
 ```
+
+If the command is a directory, `sub` looks for documentation in a `README` file
+inside that directory.
 
 ## Sharing code
 
