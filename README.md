@@ -16,6 +16,7 @@ directory structure:
     ├── new
     ├── open
     └── nested
+        ├── README
         └── command
 ```
 
