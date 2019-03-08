@@ -157,33 +157,6 @@ impl Engine {
         println!("{}: no such sub command '{}'", self.name, name);
     }
 
-    pub fn display_help(&self) {
-        println!("Usage: {} <command> [args]", self.name);
-        println!();
-
-        let subcommands = self.subcommands(Vec::new());
-        if !subcommands.is_empty() {
-            println!("Available commands:");
-
-            let max_width = subcommands
-                .iter()
-                .map(|subcommand| subcommand.name())
-                .map(|name: &str| name.len())
-                .max()
-                .unwrap();
-
-            let width = max_width + 4;
-
-            for subcommand in subcommands {
-                println!("    {:width$}{}", subcommand.name(), subcommand.summary(), width = width);
-            }
-
-            println!();
-        }
-
-        println!("Use '{} help <command>' for information on a specific command.", self.name);
-    }
-
     fn libexec_path(&self) -> PathBuf {
         let mut path = self.root.clone();
         path.push("libexec");

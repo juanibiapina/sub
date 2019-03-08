@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::Command;
+use std::fmt::Write;
 
 use crate::error::{Error, Result};
 use crate::parser;
@@ -23,25 +24,22 @@ are indented.", // TODO add Args: section
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                if args.is_empty() {
-                    engine.display_help();
-                } else {
-                    let subcommand = engine.subcommand(args)?;
+                let subcommand = engine.subcommand(args)?;
 
-                    // TODO display usage information before help
+                // TODO display usage information before help
 
-                    let summary = subcommand.summary();
-                    if !summary.is_empty() {
-                        println!("{}", summary);
-                        println!();
-                    }
-
-                    let help = subcommand.help();
-                    if !help.is_empty() {
-                        println!("{}", help);
-                    }
+                let summary = subcommand.summary();
+                if !summary.is_empty() {
+                    println!("{}", summary);
+                    println!();
                 }
-                return Ok(0);
+
+                let help = subcommand.help();
+                if !help.is_empty() {
+                    println!("{}", help);
+                }
+
+                Ok(0)
             },
         })
     }
@@ -111,7 +109,36 @@ are indented.", // TODO add Args: section
 
     pub fn help(&self) -> String {
         match self {
-            SubCommand::TopLevelCommand(_) => "".to_owned(),
+            SubCommand::TopLevelCommand(c) => {
+                let mut help = String::new();
+
+                writeln!(&mut help, "Usage: {} <command> [args]", c.name).unwrap();
+                writeln!(&mut help).unwrap();
+
+                let subcommands = c.engine.subcommands(Vec::new());
+                if !subcommands.is_empty() {
+                    writeln!(&mut help, "Available commands:").unwrap();
+
+                    let max_width = subcommands
+                        .iter()
+                        .map(|subcommand| subcommand.name())
+                        .map(|name: &str| name.len())
+                        .max()
+                        .unwrap();
+
+                    let width = max_width + 4;
+
+                    for subcommand in subcommands {
+                        writeln!(&mut help, "    {:width$}{}", subcommand.name(), subcommand.summary(), width = width).unwrap();
+                    }
+
+                    writeln!(&mut help).unwrap();
+                }
+
+                writeln!(&mut help, "Use '{} help <command>' for information on a specific command.", c.name).unwrap();
+
+                help
+            },
             SubCommand::InternalCommand(c) => {
                 c.help.to_owned()
             },
