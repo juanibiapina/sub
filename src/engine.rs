@@ -32,7 +32,7 @@ impl Engine {
     }
 
     pub fn run(&self) -> Result<i32> {
-        self.subcommand(self.args.clone())?.invoke(self)
+        self.subcommand(self.args.clone())?.invoke()
     }
 
     pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
@@ -40,15 +40,16 @@ impl Engine {
             return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
                 name: self.name.to_owned(),
                 path: self.libexec_path(),
+                engine: &self,
             }));
         }
 
         let name = &args[0];
 
         match name.as_ref() {
-            "help" => Ok(SubCommand::internal_help(args.split_off(1))),
-            "commands" => Ok(SubCommand::internal_commands(args.split_off(1))),
-            "completions" => Ok(SubCommand::internal_completions(args.split_off(1))),
+            "help" => Ok(SubCommand::internal_help(&self, args.split_off(1))),
+            "commands" => Ok(SubCommand::internal_commands(&self, args.split_off(1))),
+            "completions" => Ok(SubCommand::internal_completions(&self, args.split_off(1))),
             _ => {
                 self.external_subcommand(args)
             },
@@ -60,6 +61,7 @@ impl Engine {
             return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
                 name: self.name.to_owned(),
                 path: self.libexec_path(),
+                engine: &self,
             }));
         }
 
@@ -89,6 +91,7 @@ impl Engine {
                         names,
                         path,
                         args,
+                        engine: &self,
                     }));
                 }
 
@@ -100,6 +103,7 @@ impl Engine {
                     names,
                     path,
                     args,
+                    engine: &self,
                 }));
             }
 
@@ -115,6 +119,7 @@ impl Engine {
                 names,
                 path,
                 args,
+                engine: &self,
             }));
         }
     }
@@ -141,8 +146,8 @@ impl Engine {
         }
 
         if include_internal {
-            subcommands.push(SubCommand::internal_help(Vec::new()));
-            subcommands.push(SubCommand::internal_commands(Vec::new()));
+            subcommands.push(SubCommand::internal_help(&self, Vec::new()));
+            subcommands.push(SubCommand::internal_commands(&self, Vec::new()));
         }
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
