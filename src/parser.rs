@@ -23,6 +23,23 @@ pub fn extract_summary(path: &Path) -> String {
     "".to_owned()
 }
 
+pub fn extract_args(path: &Path) -> String {
+    let file = File::open(path).unwrap();
+    lazy_static! {
+        static ref ARGS_RE: Regex = Regex::new("^# Args: (.*)$").unwrap();
+    }
+    for line in BufReader::new(file).lines() {
+        let line = line.unwrap();
+        if let Some(caps) = ARGS_RE.captures(&line) {
+            if let Some(m) = caps.get(1) {
+                return m.as_str().to_owned();
+            }
+        }
+    }
+
+    "".to_owned()
+}
+
 pub fn extract_help(path: &Path) -> String {
     let file = File::open(path).unwrap();
     lazy_static! {

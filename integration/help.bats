@@ -8,7 +8,9 @@ load test_helper
   run main help
 
   assert_success
-  assert_output "Top level command summary
+  assert_output "Usage: main [<subcommands>] [<args>]
+
+Top level command summary
 
 Description of the top level command.
 
@@ -32,7 +34,9 @@ Use 'main help <command>' for information on a specific command."
   run main help echo
 
   assert_success
-  assert_output "Echo arguments
+  assert_output "Usage: main echo [<args>]
+
+Echo arguments
 
 This is a complete test script with documentation.
 
@@ -45,7 +49,9 @@ The help section can span multiple lines."
   run main help error
 
   assert_success
-  assert_output "Return with error 4"
+  assert_output "Usage: main error
+
+Return with error 4"
 }
 
 @test "help: fails gracefully when requested command doesn't exist" {
@@ -63,7 +69,9 @@ The help section can span multiple lines."
   run main help nested
 
   assert_success
-  assert_output "Run a nested command
+  assert_output "Usage: main nested [<subcommands>] [<args>]
+
+Run a nested command
 
 Documentation for this group.
 
@@ -82,7 +90,9 @@ Use 'main help nested <command>' for information on a specific command."
   run main help nested echo
 
   assert_success
-  assert_output "Echo arguments 2
+  assert_output "Usage: main nested echo [<args>]
+
+Echo arguments 2
 
 This is a complete test script with documentation.
 
@@ -95,7 +105,9 @@ The help section can span multiple lines."
   run main help nested double
 
   assert_success
-  assert_output "Run a double nested command
+  assert_output "Usage: main nested double [<subcommands>] [<args>]
+
+Run a double nested command
 
 Documentation for this double nested group.
 
@@ -113,7 +125,9 @@ Use 'main help nested double <command>' for information on a specific command."
   run main help nested double echo
 
   assert_success
-  assert_output "Echo arguments 3
+  assert_output "Usage: main nested double echo [<args>]
+
+Echo arguments 3
 
 This is a complete test script with documentation.
 

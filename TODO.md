@@ -1,7 +1,7 @@
 # Features
 
 - display completions for internal commands
-- generate usage information from command args
+- display usage for internal commands
 - generate completions
 
 # Tests

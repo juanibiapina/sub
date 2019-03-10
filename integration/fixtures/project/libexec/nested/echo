@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Summary: Echo arguments 2
+# Args: [<args>]
 # Help: This is a complete test script with documentation.
 #
 # The help section can span multiple lines.

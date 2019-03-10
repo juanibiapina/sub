@@ -17,15 +17,21 @@ impl<'e> SubCommand<'e> {
             name: "help",
             summary: "Display help for a sub command",
             help: "A command is considered documented if it starts with a comment block
-that has a 'Summary:', or 'Help:' section. The help
-section can span multiple lines as long as subsequent lines
-are indented.", // TODO add Args: section
+that has a 'Summary:', or 'Help:' section. The help section
+can span multiple lines as long as subsequent lines are indented.
+
+An 'Args:' section can be used to describe command arguments.=,
+but it must appear before 'Help:'.",
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
                 let subcommand = engine.subcommand(args.clone())?;
 
-                // TODO display usage information before help
+                let usage = subcommand.usage();
+                if !usage.is_empty() {
+                    println!("{}", usage);
+                    println!();
+                }
 
                 let summary = subcommand.summary();
                 if !summary.is_empty() {
@@ -139,10 +145,38 @@ are indented.", // TODO add Args: section
         }
     }
 
+    pub fn usage(&self) -> String {
+        match self {
+            SubCommand::TopLevelCommand(c) => {
+                format!("Usage: {} [<subcommands>] [<args>]", c.name)
+            },
+            SubCommand::InternalCommand(_) => {
+                "".to_owned()
+            },
+            SubCommand::ExternalCommand(c) => {
+                let args = if c.path.is_dir() {
+                    "[<subcommands>] [<args>]".to_owned()
+                } else {
+                    parser::extract_args(&c.path)
+                };
+
+                let mut parts = vec!["Usage:", c.engine.name()];
+                for name in c.names.iter() {
+                    parts.push(name);
+                }
+
+                if !args.is_empty() {
+                    parts.push(&args);
+                }
+
+                parts.join(" ")
+            },
+        }
+    }
+
     pub fn help(&self) -> String {
         match self {
             SubCommand::TopLevelCommand(c) => {
-                //format!("Usage: {} <command> [args]", c.name) TODO
                 let mut readme_path = c.path.clone();
                 readme_path.push("README");
 
