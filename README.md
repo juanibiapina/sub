@@ -69,6 +69,7 @@ file. An example documented command:
 ```sh
 #!/usr/bin/env bash
 # Summary: One line summary of the command
+# Args: [--option] <required-arg>
 # Help: Longer description of what the command does.
 #
 # The help section can span multiple lines.
