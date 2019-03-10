@@ -2,13 +2,17 @@
 
 load test_helper
 
-@test "help: without arguments, displays help" {
+@test "help: without arguments, displays help for top level command" {
   fixture
 
   run main help
 
   assert_success
-  assert_output "Usage: main <command> [args]
+  assert_output "Top level command summary
+
+Description of the top level command.
+
+Extended documentation.
 
 Available subcommands:
     commands    List available commands

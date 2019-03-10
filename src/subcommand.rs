@@ -111,7 +111,16 @@ are indented.", // TODO add Args: section
 
     pub fn summary(&self) -> String {
         match self {
-            SubCommand::TopLevelCommand(_) => "".to_owned(),
+            SubCommand::TopLevelCommand(c) => {
+                let mut readme_path = c.path.clone();
+                readme_path.push("README");
+
+                if readme_path.exists() {
+                    parser::extract_summary(&readme_path)
+                } else {
+                    "".to_owned()
+                }
+            },
             SubCommand::InternalCommand(c) => c.summary.to_owned(),
             SubCommand::ExternalCommand(c) => {
                 if c.path.is_dir() {
@@ -133,7 +142,15 @@ are indented.", // TODO add Args: section
     pub fn help(&self) -> String {
         match self {
             SubCommand::TopLevelCommand(c) => {
-                format!("Usage: {} <command> [args]", c.name)
+                //format!("Usage: {} <command> [args]", c.name) TODO
+                let mut readme_path = c.path.clone();
+                readme_path.push("README");
+
+                if readme_path.exists() {
+                    parser::extract_help(&readme_path)
+                } else {
+                    "".to_owned()
+                }
             },
             SubCommand::InternalCommand(c) => {
                 c.help.to_owned()
