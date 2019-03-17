@@ -28,13 +28,25 @@ Available subcommands:
 Use 'main help <command>' for information on a specific command."
 }
 
+@test "help: displays usage for a non documented command" {
+  fixture
+
+  run main help no-doc
+
+  assert_success
+  assert_output "Usage: main no-doc"
+}
+
 @test "help: displays help for a subcommand" {
   fixture
 
   run main help echo
 
   assert_success
-  assert_output "Usage: main echo [<args>]
+  assert_output "Usage: main echo
+       main echo [<args>]
+
+ --complete  Provides completions
 
 Echo arguments
 

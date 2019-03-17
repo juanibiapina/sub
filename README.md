@@ -68,11 +68,17 @@ file. An example documented command:
 
 ```sh
 #!/usr/bin/env bash
-# Summary: One line summary of the command
-# Args: [--option] <required-arg>
-# Help: Longer description of what the command does.
 #
-# The help section can span multiple lines.
+# Summary: One line summary of the command
+#
+# Usage: {cmd} <required-arg>
+#        {cmd} [--option] <required-arg>
+#
+#  --option Activates an option
+#
+# Extended description of what the command does.
+#
+# The extended description can span multiple lines.
 ```
 
 If the command is a directory, `sub` looks for documentation in a `README` file

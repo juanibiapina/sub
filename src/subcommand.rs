@@ -17,11 +17,10 @@ impl<'e> SubCommand<'e> {
             name: "help",
             summary: "Display help for a sub command",
             help: "A command is considered documented if it starts with a comment block
-that has a 'Summary:', or 'Help:' section. The help section
-can span multiple lines as long as subsequent lines are indented.
-
-An 'Args:' section can be used to describe command arguments.=,
-but it must appear before 'Help:'.",
+that has a `Summary:' or `Usage:' section. Usage instructions can
+span multiple lines as long as subsequent lines are indented.
+The remainder of the comment block is displayed as extended
+documentation.",
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
@@ -122,7 +121,7 @@ but it must appear before 'Help:'.",
                 readme_path.push("README");
 
                 if readme_path.exists() {
-                    parser::extract_summary(&readme_path)
+                    parser::extract_docs(&readme_path).0
                 } else {
                     "".to_owned()
                 }
@@ -134,12 +133,12 @@ but it must appear before 'Help:'.",
                     readme_path.push("README");
 
                     if readme_path.exists() {
-                        parser::extract_summary(&readme_path)
+                        parser::extract_docs(&readme_path).0
                     } else {
                         "".to_owned()
                     }
                 } else {
-                    parser::extract_summary(&c.path)
+                    parser::extract_docs(&c.path).0
                 }
             },
         }
@@ -154,22 +153,21 @@ but it must appear before 'Help:'.",
                 "".to_owned()
             },
             SubCommand::ExternalCommand(c) => {
-                let args = if c.path.is_dir() {
-                    "[<subcommands>] [<args>]".to_owned()
+                let mut cmd = vec![c.engine.name().to_owned()];
+                cmd.extend(c.names.iter().map(|s| s.to_owned()));
+
+                let cmd = cmd.join(" ");
+
+                if c.path.is_dir() {
+                    vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
                 } else {
-                    parser::extract_args(&c.path)
-                };
-
-                let mut parts = vec!["Usage:", c.engine.name()];
-                for name in c.names.iter() {
-                    parts.push(name);
+                    let usage = parser::extract_docs(&c.path).1;
+                    if usage.is_empty() {
+                        format!("Usage: {}", cmd)
+                    } else {
+                        usage.replace("{cmd}", &cmd)
+                    }
                 }
-
-                if !args.is_empty() {
-                    parts.push(&args);
-                }
-
-                parts.join(" ")
             },
         }
     }
@@ -181,7 +179,7 @@ but it must appear before 'Help:'.",
                 readme_path.push("README");
 
                 if readme_path.exists() {
-                    parser::extract_help(&readme_path)
+                    parser::extract_docs(&readme_path).2
                 } else {
                     "".to_owned()
                 }
@@ -195,12 +193,12 @@ but it must appear before 'Help:'.",
                     readme_path.push("README");
 
                     if readme_path.exists() {
-                        parser::extract_help(&readme_path)
+                        parser::extract_docs(&readme_path).2
                     } else {
                         "".to_owned()
                     }
                 } else {
-                    parser::extract_help(&c.path)
+                    parser::extract_docs(&c.path).2
                 }
             },
         }
