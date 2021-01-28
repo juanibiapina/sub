@@ -14,3 +14,12 @@ load test_helper
   assert_success
   assert_output "$prefix${SUB_TEST_DIR}/project"
 }
+
+@test "env: sets an env variable for a XDG cache directory" {
+  fixture
+
+  run main env _MAIN_CACHE
+
+  assert_success
+  assert_output "$HOME/.cache/main/cache"
+}

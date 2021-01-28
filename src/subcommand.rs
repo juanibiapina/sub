@@ -260,6 +260,7 @@ documentation.",
                     command.args(&c.args);
 
                     command.env(format!("_{}_ROOT", c.engine.name().to_uppercase()), c.engine.root());
+                    command.env(format!("_{}_CACHE", c.engine.name().to_uppercase()), c.engine.cache_directory());
 
                     let status = command.status().unwrap();
 

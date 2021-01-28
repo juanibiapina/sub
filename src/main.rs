@@ -42,7 +42,24 @@ fn main() {
         .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
         .unwrap_or_default();
 
-    let sub = Engine::new(name, root, args);
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&name) {
+        Ok(dir) => dir,
+        Err(e) => {
+            println!("Problem determining XDG base directory");
+            println!("Original error: {}", e);
+            exit(1);
+        }
+    };
+    let cache_directory = match xdg_dirs.create_cache_directory("cache") {
+        Ok(dir) => dir,
+        Err(e) => {
+            println!("Problem determining XDG cache directory");
+            println!("Original error: {}", e);
+            exit(1);
+        }
+    };
+
+    let sub = Engine::new(name, root, cache_directory, args);
 
     match sub.run() {
         Ok(code) => exit(code),

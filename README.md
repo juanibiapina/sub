@@ -91,6 +91,12 @@ When invoking subcommands, `sub` sets an environment variable called
 the canonicalized path to the root of your CLI. It can be used for instance for
 sourcing shared scripts.
 
+## Caching
+
+When invoking subcommands, `sub` sets an environment variable called
+`_CLINAME_CACHE` (where `CLINAME` is the name of your CLI. This variable points
+to an XDG compliant cache directory that can be used for storing temporary files.
+
 ## Inspiration
 
 - [sub from basecamp](https://github.com/basecamp/sub)
