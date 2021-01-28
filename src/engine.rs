@@ -9,14 +9,16 @@ use crate::error::Error;
 pub struct Engine {
     name: String,
     root: PathBuf,
+    cache_directory: PathBuf,
     args: Vec<String>,
 }
 
 impl Engine {
-    pub fn new(name: String, root: PathBuf, args: Vec<String>) -> Engine {
+    pub fn new(name: String, root: PathBuf, cache_directory: PathBuf, args: Vec<String>) -> Engine {
         Engine {
             name,
             root,
+            cache_directory,
             args,
         }
     }
@@ -27,6 +29,10 @@ impl Engine {
 
     pub fn root(&self) -> &Path {
         &self.root
+    }
+
+    pub fn cache_directory(&self) -> &Path {
+        &self.cache_directory
     }
 
     pub fn run(&self) -> Result<i32> {
