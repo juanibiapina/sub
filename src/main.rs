@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{Arg, Command, value_parser};
+use clap::{value_parser, Arg, ArgMatches, Command};
 
 use std::path::{PathBuf, Path};
 use std::process::exit;
@@ -18,14 +18,7 @@ fn main() {
     let name = matches
         .get_one::<String>("name")
         .expect("`name` is required");
-    let root = {
-        let mut path = matches.get_one::<PathBuf>("bin").expect("`bin` is required").clone();
-        path.pop(); // remove bin name
-        if let Some(relative) = matches.get_one::<PathBuf>("relative") {
-            path.push(relative)
-        };
-        path
-    };
+    let root = determine_root_directory(&matches);
     let args = matches
         .get_many("commands")
         .map(|cmds| cmds.cloned().collect::<Vec<_>>())
@@ -62,6 +55,23 @@ fn main() {
     }
 }
 
+fn determine_root_directory(matches: &ArgMatches) -> PathBuf {
+    match matches.get_one::<PathBuf>("absolute") {
+        Some(absolute) => absolute.clone(),
+        None => {
+            let mut path = matches
+                .get_one::<PathBuf>("bin")
+                .expect("Either `bin` or `absolute` is required")
+                .clone();
+            path.pop(); // remove bin name
+            if let Some(relative) = matches.get_one::<PathBuf>("relative") {
+                path.push(relative)
+            };
+            path
+        }
+    }
+}
+
 fn init_cli() -> Command {
     Command::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
@@ -83,6 +93,12 @@ fn init_cli() -> Command {
                 .long("relative")
                 .value_parser(value_parser!(PathBuf))
                 .help("Sets how to find the root directory based on the location of the bin"),
+        )
+        .arg(
+            Arg::new("absolute")
+                .long("absolute")
+                .value_parser(value_parser!(PathBuf))
+                .help("Sets how to find the root directory as an absolute path"),
         )
         .arg(
             Arg::new("commands")
