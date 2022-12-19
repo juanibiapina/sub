@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{App, AppSettings, Arg};
+use clap::{Arg, Command};
 
 use std::fs;
 use std::process::exit;
@@ -15,13 +15,15 @@ fn main() {
 
     let matches = app.get_matches();
 
-    let name = matches.value_of("name").unwrap().to_owned();
-    let relative = matches.value_of("relative").unwrap_or(".");
-    let bin = matches.value_of("bin").unwrap();
+    let name = matches
+        .get_one::<String>("name")
+        .expect("`name` is required");
+    let relative = matches.get_one::<String>("relative");
+    let bin = matches.get_one::<String>("bin").expect("`bin` is required");
     let root = match fs::canonicalize(&bin) {
         Ok(mut path) => {
             path.pop(); // remove bin name
-            path.push(&relative);
+            path.push(relative.map_or(".", |str| str.as_str()));
             match fs::canonicalize(&path) {
                 Ok(path) => path,
                 Err(e) => {
@@ -30,16 +32,16 @@ fn main() {
                     exit(1)
                 }
             }
-        },
+        }
         Err(e) => {
-            println!("Invalid bin path: {}", matches.value_of("bin").unwrap());
+            println!("Invalid bin path: {}", bin);
             println!("Original error: {}", e);
             exit(1)
         }
     };
     let args = matches
-        .values_of("commands")
-        .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
+        .get_many("commands")
+        .map(|cmds| cmds.cloned().collect::<Vec<_>>())
         .unwrap_or_default();
 
     let xdg_dirs = match xdg::BaseDirectories::with_prefix(&name) {
@@ -59,7 +61,7 @@ fn main() {
         }
     };
 
-    let sub = Engine::new(name, root, cache_directory, args);
+    let sub = Engine::new(name.clone(), root, cache_directory, args);
 
     match sub.run() {
         Ok(code) => exit(code),
@@ -69,34 +71,36 @@ fn main() {
         Err(Error::UnknownSubCommand(name)) => {
             sub.display_unknown_subcommand(&name);
             exit(1);
-        },
+        }
     }
 }
 
-fn init_cli<'help>() -> App<'help> {
-    App::new("sub")
+fn init_cli() -> Command {
+    Command::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
-        .setting(AppSettings::ColoredHelp)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .arg(Arg::with_name("name")
-             .long("name")
-             .required(true)
-             .takes_value(true)
-             .help("Sets the binary name"))
-        .arg(Arg::with_name("bin")
-             .long("bin")
-             .required(true)
-             .takes_value(true)
-             .help("Sets the path of the CLI binary"))
-        .arg(Arg::with_name("relative")
-             .long("relative")
-             .takes_value(true)
-             .help("Sets how to find the root directory based on the location of the bin"))
-        .arg(Arg::with_name("commands")
-             .allow_hyphen_values(true)
-             .last(true)
-             .multiple(true))
+        .arg(
+            Arg::new("name")
+                .long("name")
+                .required(true)
+                .help("Sets the binary name"),
+        )
+        .arg(
+            Arg::new("bin")
+                .long("bin")
+                .required(true)
+                .help("Sets the path of the CLI binary"),
+        )
+        .arg(
+            Arg::new("relative")
+                .long("relative")
+                .help("Sets how to find the root directory based on the location of the bin"),
+        )
+        .arg(
+            Arg::new("commands")
+                .allow_hyphen_values(true)
+                .trailing_var_arg(true)
+                .num_args(..),
+        )
 }
 
 #[test]
