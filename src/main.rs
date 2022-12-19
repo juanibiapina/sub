@@ -4,7 +4,7 @@ extern crate clap;
 
 use clap::{Arg, Command, value_parser};
 
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::process::exit;
 
 use sub::engine::Engine;
@@ -75,7 +75,7 @@ fn init_cli() -> Command {
             Arg::new("bin")
                 .long("bin")
                 .required(true)
-                .value_parser(value_parser!(PathBuf))
+                .value_parser(canonicalized_path)
                 .help("Sets the path of the CLI binary"),
         )
         .arg(
@@ -95,4 +95,10 @@ fn init_cli() -> Command {
 #[test]
 fn verify_cli() {
     init_cli().debug_assert();
+}
+
+fn canonicalized_path(s: &str) -> Result<PathBuf, String> {
+    Path::new(s)
+        .canonicalize()
+        .map_err(|err| format!("{} is not a valid binary path\n{}", s, err))
 }
