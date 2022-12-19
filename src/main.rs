@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{value_parser, Arg, Command};
+use clap::{value_parser, Arg, ArgGroup, Command};
 
 use std::path::{PathBuf, Path};
 use std::process::exit;
@@ -70,13 +70,19 @@ fn init_cli() -> Command {
             Arg::new("relative")
                 .long("relative")
                 .value_parser(value_parser!(PathBuf))
+                .conflicts_with("absolute")
                 .help("Sets how to find the root directory based on the location of the bin"),
         )
         .arg(
             Arg::new("absolute")
                 .long("absolute")
-                .value_parser(value_parser!(PathBuf))
+                .value_parser(absolute_path)
                 .help("Sets how to find the root directory as an absolute path"),
+        )
+        .group(
+            ArgGroup::new("path")
+                .args(["bin", "absolute"])
+                .required(true),
         )
         .arg(
             Arg::new("commands")
@@ -123,8 +129,17 @@ fn parse_cli_args() -> Args {
     }
 }
 
+fn absolute_path(s: &str) -> Result<PathBuf, String> {
+    let path = Path::new(s);
+    if path.is_absolute() {
+        Ok(path.to_owned())
+    } else {
+        Err("not an absolute path".to_string())
+    }
+}
+
 fn canonicalized_path(s: &str) -> Result<PathBuf, String> {
     Path::new(s)
         .canonicalize()
-        .map_err(|err| format!("{} is not a valid binary path\n{}", s, err))
+        .map_err(|err| err.to_string())
 }
