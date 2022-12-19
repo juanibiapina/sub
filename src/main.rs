@@ -73,11 +73,10 @@ fn main() {
     }
 }
 
-fn init_cli<'a, 'b>() -> App<'a, 'b> {
+fn init_cli<'help>() -> App<'help> {
     App::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
         .setting(AppSettings::ColoredHelp)
-        .setting(AppSettings::VersionlessSubcommands)
         .setting(AppSettings::AllowLeadingHyphen)
         .setting(AppSettings::TrailingVarArg)
         .arg(Arg::with_name("name")
@@ -98,4 +97,9 @@ fn init_cli<'a, 'b>() -> App<'a, 'b> {
              .allow_hyphen_values(true)
              .last(true)
              .multiple(true))
+}
+
+#[test]
+fn verify_cli() {
+    init_cli().debug_assert();
 }
