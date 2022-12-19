@@ -2,9 +2,9 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{Arg, Command};
+use clap::{Arg, Command, value_parser};
 
-use std::fs;
+use std::path::PathBuf;
 use std::process::exit;
 
 use sub::engine::Engine;
@@ -18,26 +18,13 @@ fn main() {
     let name = matches
         .get_one::<String>("name")
         .expect("`name` is required");
-    let relative = matches.get_one::<String>("relative");
-    let bin = matches.get_one::<String>("bin").expect("`bin` is required");
-    let root = match fs::canonicalize(&bin) {
-        Ok(mut path) => {
-            path.pop(); // remove bin name
-            path.push(relative.map_or(".", |str| str.as_str()));
-            match fs::canonicalize(&path) {
-                Ok(path) => path,
-                Err(e) => {
-                    println!("Invalid root path: {}", path.as_path().to_str().unwrap());
-                    println!("Original error: {}", e);
-                    exit(1)
-                }
-            }
-        }
-        Err(e) => {
-            println!("Invalid bin path: {}", bin);
-            println!("Original error: {}", e);
-            exit(1)
-        }
+    let root = {
+        let mut path = matches.get_one::<PathBuf>("bin").expect("`bin` is required").clone();
+        path.pop(); // remove bin name
+        if let Some(relative) = matches.get_one::<PathBuf>("relative") {
+            path.push(relative)
+        };
+        path
     };
     let args = matches
         .get_many("commands")
@@ -88,11 +75,13 @@ fn init_cli() -> Command {
             Arg::new("bin")
                 .long("bin")
                 .required(true)
+                .value_parser(value_parser!(PathBuf))
                 .help("Sets the path of the CLI binary"),
         )
         .arg(
             Arg::new("relative")
                 .long("relative")
+                .value_parser(value_parser!(PathBuf))
                 .help("Sets how to find the root directory based on the location of the bin"),
         )
         .arg(
