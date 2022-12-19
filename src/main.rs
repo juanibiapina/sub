@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{value_parser, Arg, ArgMatches, Command};
+use clap::{value_parser, Arg, Command};
 
 use std::path::{PathBuf, Path};
 use std::process::exit;
@@ -11,20 +11,9 @@ use sub::engine::Engine;
 use sub::error::Error;
 
 fn main() {
-    let app = init_cli();
+    let args = parse_cli_args();
 
-    let matches = app.get_matches();
-
-    let name = matches
-        .get_one::<String>("name")
-        .expect("`name` is required");
-    let root = determine_root_directory(&matches);
-    let args = matches
-        .get_many("commands")
-        .map(|cmds| cmds.cloned().collect::<Vec<_>>())
-        .unwrap_or_default();
-
-    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&name) {
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&args.name) {
         Ok(dir) => dir,
         Err(e) => {
             println!("Problem determining XDG base directory");
@@ -41,7 +30,7 @@ fn main() {
         }
     };
 
-    let sub = Engine::new(name.clone(), root, cache_directory, args);
+    let sub = Engine::new(args.name, args.root, cache_directory, args.commands);
 
     match sub.run() {
         Ok(code) => exit(code),
@@ -55,21 +44,10 @@ fn main() {
     }
 }
 
-fn determine_root_directory(matches: &ArgMatches) -> PathBuf {
-    match matches.get_one::<PathBuf>("absolute") {
-        Some(absolute) => absolute.clone(),
-        None => {
-            let mut path = matches
-                .get_one::<PathBuf>("bin")
-                .expect("Either `bin` or `absolute` is required")
-                .clone();
-            path.pop(); // remove bin name
-            if let Some(relative) = matches.get_one::<PathBuf>("relative") {
-                path.push(relative)
-            };
-            path
-        }
-    }
+struct Args {
+    name: String,
+    root: PathBuf,
+    commands: Vec<String>,
 }
 
 fn init_cli() -> Command {
@@ -111,6 +89,38 @@ fn init_cli() -> Command {
 #[test]
 fn verify_cli() {
     init_cli().debug_assert();
+}
+
+fn parse_cli_args() -> Args {
+    let app = init_cli();
+    let args = app.get_matches();
+
+    Args {
+        name: args
+            .get_one::<String>("name")
+            .expect("`name` is mandatory")
+            .clone(),
+
+        commands: args
+            .get_many("commands")
+            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
+            .unwrap_or_default(),
+
+        root: match args.get_one::<PathBuf>("absolute") {
+            Some(path) => path.clone(),
+            None => {
+                let mut path = args
+                    .get_one::<PathBuf>("bin")
+                    .expect("Either `bin` or `absolute` is required")
+                    .clone();
+                path.pop(); // remove bin name
+                if let Some(relative) = args.get_one::<PathBuf>("relative") {
+                    path.push(relative)
+                };
+                path
+            }
+        },
+    }
 }
 
 fn canonicalized_path(s: &str) -> Result<PathBuf, String> {
