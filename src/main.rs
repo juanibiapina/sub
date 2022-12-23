@@ -2,47 +2,18 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{App, AppSettings, Arg};
+use clap::{value_parser, Arg, ArgGroup, Command};
 
-use std::fs;
+use std::path::{PathBuf, Path};
 use std::process::exit;
 
 use sub::engine::Engine;
 use sub::error::Error;
 
 fn main() {
-    let app = init_cli();
+    let args = parse_cli_args();
 
-    let matches = app.get_matches();
-
-    let name = matches.value_of("name").unwrap().to_owned();
-    let relative = matches.value_of("relative").unwrap_or(".");
-    let bin = matches.value_of("bin").unwrap();
-    let root = match fs::canonicalize(&bin) {
-        Ok(mut path) => {
-            path.pop(); // remove bin name
-            path.push(&relative);
-            match fs::canonicalize(&path) {
-                Ok(path) => path,
-                Err(e) => {
-                    println!("Invalid root path: {}", path.as_path().to_str().unwrap());
-                    println!("Original error: {}", e);
-                    exit(1)
-                }
-            }
-        },
-        Err(e) => {
-            println!("Invalid bin path: {}", matches.value_of("bin").unwrap());
-            println!("Original error: {}", e);
-            exit(1)
-        }
-    };
-    let args = matches
-        .values_of("commands")
-        .and_then(|args| Some(args.map(|s| s.to_owned()).collect::<Vec<_>>()))
-        .unwrap_or_default();
-
-    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&name) {
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&args.name) {
         Ok(dir) => dir,
         Err(e) => {
             println!("Problem determining XDG base directory");
@@ -59,7 +30,7 @@ fn main() {
         }
     };
 
-    let sub = Engine::new(name, root, cache_directory, args);
+    let sub = Engine::new(args.name, args.root, cache_directory, args.commands);
 
     match sub.run() {
         Ok(code) => exit(code),
@@ -69,33 +40,106 @@ fn main() {
         Err(Error::UnknownSubCommand(name)) => {
             sub.display_unknown_subcommand(&name);
             exit(1);
+        }
+    }
+}
+
+struct Args {
+    name: String,
+    root: PathBuf,
+    commands: Vec<String>,
+}
+
+fn init_cli() -> Command {
+    Command::new("sub")
+        .version(env!("CARGO_PKG_VERSION"))
+        .arg(
+            Arg::new("name")
+                .long("name")
+                .required(true)
+                .help("Sets the binary name"),
+        )
+        .arg(
+            Arg::new("bin")
+                .long("bin")
+                .required(true)
+                .value_parser(canonicalized_path)
+                .help("Sets the path of the CLI binary"),
+        )
+        .arg(
+            Arg::new("relative")
+                .long("relative")
+                .value_parser(value_parser!(PathBuf))
+                .conflicts_with("absolute")
+                .help("Sets how to find the root directory based on the location of the bin"),
+        )
+        .arg(
+            Arg::new("absolute")
+                .long("absolute")
+                .value_parser(absolute_path)
+                .help("Sets how to find the root directory as an absolute path"),
+        )
+        .group(
+            ArgGroup::new("path")
+                .args(["bin", "absolute"])
+                .required(true),
+        )
+        .arg(
+            Arg::new("commands")
+                .allow_hyphen_values(true)
+                .trailing_var_arg(true)
+                .num_args(..),
+        )
+}
+
+#[test]
+fn verify_cli() {
+    init_cli().debug_assert();
+}
+
+fn parse_cli_args() -> Args {
+    let app = init_cli();
+    let args = app.get_matches();
+
+    Args {
+        name: args
+            .get_one::<String>("name")
+            .expect("`name` is mandatory")
+            .clone(),
+
+        commands: args
+            .get_many("commands")
+            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
+            .unwrap_or_default(),
+
+        root: match args.get_one::<PathBuf>("absolute") {
+            Some(path) => path.clone(),
+            None => {
+                let mut path = args
+                    .get_one::<PathBuf>("bin")
+                    .expect("Either `bin` or `absolute` is required")
+                    .clone();
+                path.pop(); // remove bin name
+                if let Some(relative) = args.get_one::<PathBuf>("relative") {
+                    path.push(relative)
+                };
+                path
+            }
         },
     }
 }
 
-fn init_cli<'a, 'b>() -> App<'a, 'b> {
-    App::new("sub")
-        .version(env!("CARGO_PKG_VERSION"))
-        .setting(AppSettings::ColoredHelp)
-        .setting(AppSettings::VersionlessSubcommands)
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .arg(Arg::with_name("name")
-             .long("name")
-             .required(true)
-             .takes_value(true)
-             .help("Sets the binary name"))
-        .arg(Arg::with_name("bin")
-             .long("bin")
-             .required(true)
-             .takes_value(true)
-             .help("Sets the path of the CLI binary"))
-        .arg(Arg::with_name("relative")
-             .long("relative")
-             .takes_value(true)
-             .help("Sets how to find the root directory based on the location of the bin"))
-        .arg(Arg::with_name("commands")
-             .allow_hyphen_values(true)
-             .last(true)
-             .multiple(true))
+fn absolute_path(s: &str) -> Result<PathBuf, String> {
+    let path = Path::new(s);
+    if path.is_absolute() {
+        Ok(path.to_owned())
+    } else {
+        Err("not an absolute path".to_string())
+    }
+}
+
+fn canonicalized_path(s: &str) -> Result<PathBuf, String> {
+    Path::new(s)
+        .canonicalize()
+        .map_err(|err| err.to_string())
 }
