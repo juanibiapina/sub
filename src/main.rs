@@ -63,7 +63,7 @@ fn init_cli() -> Command {
             Arg::new("bin")
                 .long("bin")
                 .required(true)
-                .value_parser(canonicalized_path)
+                .value_parser(value_parser!(PathBuf))
                 .help("Sets the path of the CLI binary"),
         )
         .arg(
@@ -123,7 +123,7 @@ fn parse_cli_args() -> Args {
                 if let Some(relative) = args.get_one::<PathBuf>("relative") {
                     path.push(relative)
                 };
-                path
+                path.canonicalize().expect("Invalid `bin` or `relative` arguments")
             }
         },
     }
@@ -136,10 +136,4 @@ fn absolute_path(s: &str) -> Result<PathBuf, String> {
     } else {
         Err("not an absolute path".to_string())
     }
-}
-
-fn canonicalized_path(s: &str) -> Result<PathBuf, String> {
-    Path::new(s)
-        .canonicalize()
-        .map_err(|err| err.to_string())
 }

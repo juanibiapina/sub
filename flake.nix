@@ -74,7 +74,7 @@
         };
 
         devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [ rustc cargo rust-analyzer rustfmt ];
+          buildInputs = with pkgs; [ rustc cargo rust-analyzer rustfmt bats ];
         };
       });
 }
