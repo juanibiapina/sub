@@ -118,6 +118,8 @@ fn parse_cli_args() -> Args {
                 let mut path = args
                     .get_one::<PathBuf>("bin")
                     .expect("Either `bin` or `absolute` is required")
+                    .canonicalize()
+                    .expect("Invalid `bin` path")
                     .clone();
                 path.pop(); // remove bin name
                 if let Some(relative) = args.get_one::<PathBuf>("relative") {
