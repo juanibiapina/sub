@@ -1,6 +1,6 @@
 [package]
 name = "sub"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Juan Ibiapina <juanibiapina@gmail.com>"]
 edition = "2018"
 

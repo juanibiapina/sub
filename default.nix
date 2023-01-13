@@ -5,7 +5,7 @@
 with pkgs;
 rustPlatform.buildRustPackage rec {
   name = "sub-${version}";
-  version = "0.8.0";
+  version = "0.8.1";
   src = ./.;
 
   cargoLock = {
