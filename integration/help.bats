@@ -3,7 +3,7 @@
 load test_helper
 
 @test "help: without arguments, displays help for top level command" {
-  fixture
+  fixture "project"
 
   run main help
 
@@ -29,7 +29,7 @@ Use 'main help <command>' for information on a specific command."
 }
 
 @test "help: displays usage for a non documented command" {
-  fixture
+  fixture "project"
 
   run main help no-doc
 
@@ -38,7 +38,7 @@ Use 'main help <command>' for information on a specific command."
 }
 
 @test "help: displays help for a subcommand" {
-  fixture
+  fixture "project"
 
   run main help echo
 
@@ -56,7 +56,7 @@ The help section can span multiple lines."
 }
 
 @test "help: displays summary for subcommand if help is not available" {
-  fixture
+  fixture "project"
 
   run main help error
 
@@ -67,7 +67,7 @@ Return with error 4"
 }
 
 @test "help: fails gracefully when requested command doesn't exist" {
-  fixture
+  fixture "project"
 
   run main help not-found
 
@@ -76,7 +76,7 @@ Return with error 4"
 }
 
 @test "help: displays help for a nested command" {
-  fixture
+  fixture "project"
 
   run main help nested
 
@@ -97,7 +97,7 @@ Use 'main help nested <command>' for information on a specific command."
 }
 
 @test "help: displays help for a nested subcommand" {
-  fixture
+  fixture "project"
 
   run main help nested echo
 
@@ -112,7 +112,7 @@ The help section can span multiple lines."
 }
 
 @test "help: displays help for a double nested command" {
-  fixture
+  fixture "project"
 
   run main help nested double
 
@@ -132,7 +132,7 @@ Use 'main help nested double <command>' for information on a specific command."
 }
 
 @test "help: displays help for a double nested sub command" {
-  fixture
+  fixture "project"
 
   run main help nested double echo
 

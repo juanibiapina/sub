@@ -3,7 +3,7 @@
 load test_helper
 
 @test "env: sets an env variable with the project root" {
-  fixture
+  fixture "project"
 
   run main env _MAIN_ROOT
 
@@ -16,7 +16,7 @@ load test_helper
 }
 
 @test "env: sets an env variable for a XDG cache directory" {
-  fixture
+  fixture "project"
 
   run main env _MAIN_CACHE
 

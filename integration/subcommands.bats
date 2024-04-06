@@ -3,7 +3,7 @@
 load test_helper
 
 @test "subcommands: without a subcommand, displays help" {
-  fixture
+  fixture "project"
 
   run main
 
@@ -12,7 +12,7 @@ load test_helper
 }
 
 @test "subcommands: ignores hidden files" {
-  fixture
+  fixture "project"
 
   run main
 
@@ -21,7 +21,7 @@ load test_helper
 }
 
 @test "subcommands: ignores non executable files" {
-  fixture
+  fixture "project"
 
   run main
 
@@ -30,7 +30,7 @@ load test_helper
 }
 
 @test "subcommands: invokes a subcommand without arguments" {
-  fixture
+  fixture "project"
 
   run main echo
 
@@ -39,7 +39,7 @@ load test_helper
 }
 
 @test "subcommands: invokes a subcommand with arguments" {
-  fixture
+  fixture "project"
 
   run main echo arg1 arg2
 
@@ -48,7 +48,7 @@ load test_helper
 }
 
 @test "subcommands: accepts dashes in arguments to subcommands" {
-  fixture
+  fixture "project"
 
   run main echo -a -b
 
@@ -57,7 +57,7 @@ load test_helper
 }
 
 @test "subcommands: returns the subcommand exit code" {
-  fixture
+  fixture "project"
 
   run main error
 
@@ -65,7 +65,7 @@ load test_helper
 }
 
 @test "subcommands: handles non existent commands gracefully" {
-  fixture
+  fixture "project"
 
   run main not-found
 

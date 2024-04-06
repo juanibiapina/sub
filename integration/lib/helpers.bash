@@ -1,4 +1,5 @@
 fixture() {
-  cp -r "${SUB_ROOT}/integration/fixtures/project" "$SUB_TEST_DIR"
-  export PATH=${SUB_TEST_DIR}/project/bin:$PATH
+  name="$1"
+  cp -r "${SUB_ROOT}/integration/fixtures/$name" "$SUB_TEST_DIR"
+  export PATH="${SUB_TEST_DIR}/$name/bin:$PATH"
 }

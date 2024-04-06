@@ -3,7 +3,7 @@
 load test_helper
 
 @test "commands: lists commands alphabetically" {
-  fixture
+  fixture "project"
 
   run main commands
 
@@ -18,7 +18,7 @@ no-doc"
 }
 
 @test "commands: lists nested commands" {
-  fixture
+  fixture "project"
 
   run main commands nested
 
@@ -28,7 +28,7 @@ echo"
 }
 
 @test "commands: lists nested subcommands" {
-  fixture
+  fixture "project"
 
   run main commands nested double
 

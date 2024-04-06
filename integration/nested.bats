@@ -3,7 +3,7 @@
 load test_helper
 
 @test "nested: without a subcommand, displays help" {
-  fixture
+  fixture "project"
 
   run main nested
 
@@ -12,7 +12,7 @@ load test_helper
 }
 
 @test "nested: with a non existent subcommand, displays error message" {
-  fixture
+  fixture "project"
 
   run main nested not-found
 
@@ -21,7 +21,7 @@ load test_helper
 }
 
 @test "nested: with a subcommand, runs it" {
-  fixture
+  fixture "project"
 
   run main nested echo arg1 arg2
 
@@ -30,7 +30,7 @@ load test_helper
 }
 
 @test "nested: with a nested subcommand, displays help" {
-  fixture
+  fixture "project"
 
   run main nested double
 

@@ -3,7 +3,7 @@
 load test_helper
 
 @test "completions: without arguments, lists commands" {
-  fixture
+  fixture "project"
 
   run main completions
 
@@ -12,7 +12,7 @@ load test_helper
 }
 
 @test "completions: fails gracefully when command is not found" {
-  fixture
+  fixture "project"
 
   run main completions not-found
 
@@ -21,7 +21,7 @@ load test_helper
 }
 
 @test "completions: invokes command completions" {
-  fixture
+  fixture "project"
 
   run main completions echo
 
@@ -31,7 +31,7 @@ comp2"
 }
 
 @test "completions: lists nothing if command provides no completions" {
-  fixture
+  fixture "project"
 
   run main completions error
 
@@ -40,7 +40,7 @@ comp2"
 }
 
 @test "completions: displays nested commands" {
-  fixture
+  fixture "project"
 
   run main completions nested
 
@@ -49,7 +49,7 @@ comp2"
 }
 
 @test "completions: displays double nested commands" {
-  fixture
+  fixture "project"
 
   run main completions nested double
 
@@ -58,7 +58,7 @@ comp2"
 }
 
 @test "completions: displays double nested subcommands" {
-  fixture
+  fixture "project"
 
   run main completions nested double echo
 
