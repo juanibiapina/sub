@@ -4,13 +4,18 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    devenv.url = "github:cachix/devenv";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  nixConfig = {
+    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
+    extra-substituters = "https://devenv.cachix.org";
+  };
+
+  outputs = { self, nixpkgs, flake-utils, devenv, ... } @ inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
       rec {
-
         packages = {
           default = packages.sub;
           sub = pkgs.callPackage ./default.nix { inherit pkgs; };
@@ -73,8 +78,18 @@
           sub = flake-utils.lib.mkApp { drv = packages.sub; };
         };
 
-        devShell = pkgs.mkShell {
-          buildInputs = with pkgs; [ rustc cargo rust-analyzer rustfmt bats ];
+        devShell = devenv.lib.mkShell {
+          inherit inputs pkgs;
+
+          modules = [
+            {
+              packages = with pkgs; [
+                bats
+              ];
+
+              languages.rust.enable = true;
+            }
+          ];
         };
       });
 }
