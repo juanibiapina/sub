@@ -61,14 +61,6 @@ impl Engine {
     }
 
     fn external_subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
-        if args.is_empty() {
-            return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
-                name: self.name.to_owned(),
-                path: self.libexec_path(),
-                engine: &self,
-            }));
-        }
-
         let mut path = self.libexec_path();
         let mut names = Vec::new();
 
