@@ -11,16 +11,15 @@ pub enum SubCommand<'e> {
     ExternalCommand(ExternalCommand<'e>),
 }
 
-impl<'e> SubCommand<'e> {
-    pub fn internal_help(engine: &'e Engine, args: Vec<String>) -> SubCommand {
-        SubCommand::InternalCommand(InternalCommand{
-            name: "help",
-            summary: "Display help for a sub command",
-            help: "A command is considered documented if it starts with a comment block
-that has a `Summary:' or `Usage:' section. Usage instructions can
-span multiple lines as long as subsequent lines are indented.
-The remainder of the comment block is displayed as extended
-documentation.",
+pub fn internal_help(engine: &Engine, args: Vec<String>) -> SubCommand {
+    SubCommand::InternalCommand(InternalCommand{
+        name: "help",
+        summary: "Display help for a sub command",
+        help: "A command is considered documented if it starts with a comment block
+            that has a `Summary:' or `Usage:' section. Usage instructions can
+            span multiple lines as long as subsequent lines are indented.
+            The remainder of the comment block is displayed as extended
+            documentation.",
             args,
             engine,
             func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
@@ -69,43 +68,44 @@ documentation.",
 
                 Ok(0)
             },
-        })
-    }
+    })
+}
 
-    pub fn internal_commands(engine: &'e Engine, args: Vec<String>) -> SubCommand {
-        SubCommand::InternalCommand(InternalCommand{
-            name: "commands",
-            summary: "List available commands",
-            help: "",
-            args,
-            engine,
-            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                for subcommand in engine.subcommands(args) {
-                    println!("{}", subcommand.name());
-                }
+pub fn internal_commands(engine: &Engine, args: Vec<String>) -> SubCommand {
+    SubCommand::InternalCommand(InternalCommand{
+        name: "commands",
+        summary: "List available commands",
+        help: "",
+        args,
+        engine,
+        func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
+            for subcommand in engine.subcommands(args) {
+                println!("{}", subcommand.name());
+            }
 
-                Ok(0)
-            },
-        })
-    }
+            Ok(0)
+        },
+    })
+}
 
-    pub fn internal_completions(engine: &'e Engine, args: Vec<String>) -> SubCommand {
-        SubCommand::InternalCommand(InternalCommand{
-            name: "completions",
-            summary: "List completions for a sub command",
-            help: "",
-            args,
-            engine,
-            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                if let Ok(subcommand) = engine.subcommand(args) {
-                    subcommand.completions()
-                } else {
-                    Ok(1)
-                }
-            },
-        })
-    }
+pub fn internal_completions(engine: &Engine, args: Vec<String>) -> SubCommand {
+    SubCommand::InternalCommand(InternalCommand{
+        name: "completions",
+        summary: "List completions for a sub command",
+        help: "",
+        args,
+        engine,
+        func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
+            if let Ok(subcommand) = engine.subcommand(args) {
+                subcommand.completions()
+            } else {
+                Ok(1)
+            }
+        },
+    })
+}
 
+impl<'e> SubCommand<'e> {
     pub fn name(&self) -> &str {
         match self {
             SubCommand::TopLevelCommand(c) => &c.name,
@@ -207,13 +207,13 @@ documentation.",
     pub fn completions(&self) -> Result<i32> {
         match self {
             SubCommand::TopLevelCommand(c) => {
-                let commands = SubCommand::internal_commands(c.engine, Vec::new());
+                let commands = internal_commands(c.engine, Vec::new());
                 commands.invoke()
             },
             SubCommand::InternalCommand(_) => Ok(0), // TODO
             SubCommand::ExternalCommand(c) => {
                 if c.path.is_dir() {
-                    let commands = SubCommand::internal_commands(c.engine, c.names.clone());
+                    let commands = internal_commands(c.engine, c.names.clone());
                     commands.invoke()
                 } else {
                     if parser::provides_completions(&c.path) {
@@ -242,7 +242,7 @@ documentation.",
     pub fn invoke(&self) -> Result<i32> {
         match self {
             SubCommand::TopLevelCommand(c) => {
-                let help_command = SubCommand::internal_help(c.engine, Vec::new());
+                let help_command = internal_help(c.engine, Vec::new());
                 help_command.invoke()
             },
             SubCommand::InternalCommand(c) => (c.func)(c.engine, c.args.clone()),
@@ -252,7 +252,7 @@ documentation.",
                 }
 
                 if c.path.is_dir() {
-                    let help_command = SubCommand::internal_help(c.engine, c.names.clone());
+                    let help_command = internal_help(c.engine, c.names.clone());
                     help_command.invoke()
                 } else {
                     let mut command = Command::new(&c.path);

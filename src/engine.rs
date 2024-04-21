@@ -2,7 +2,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand};
+use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand, internal_completions, internal_help, internal_commands};
 use crate::error::Result;
 use crate::error::Error;
 
@@ -47,9 +47,9 @@ impl Engine {
         let name = &args[0];
 
         match name.as_ref() {
-            "help" => Ok(SubCommand::internal_help(&self, args.split_off(1))),
-            "commands" => Ok(SubCommand::internal_commands(&self, args.split_off(1))),
-            "completions" => Ok(SubCommand::internal_completions(&self, args.split_off(1))),
+            "help" => Ok(internal_help(&self, args.split_off(1))),
+            "commands" => Ok(internal_commands(&self, args.split_off(1))),
+            "completions" => Ok(internal_completions(&self, args.split_off(1))),
             _ => {
                 self.external_subcommand(args)
             },
@@ -138,8 +138,8 @@ impl Engine {
         }
 
         if include_internal {
-            subcommands.push(SubCommand::internal_help(&self, Vec::new()));
-            subcommands.push(SubCommand::internal_commands(&self, Vec::new()));
+            subcommands.push(internal_help(&self, Vec::new()));
+            subcommands.push(internal_commands(&self, Vec::new()));
         }
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
