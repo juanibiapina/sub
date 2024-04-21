@@ -6,33 +6,35 @@ use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand};
 use crate::error::Result;
 use crate::error::Error;
 
+pub struct Config {
+    pub name: String,
+    pub root: PathBuf,
+    pub cache_directory: PathBuf,
+}
+
 pub struct Engine {
-    name: String,
-    root: PathBuf,
-    cache_directory: PathBuf,
+    config: Config,
     args: Vec<String>,
 }
 
 impl Engine {
-    pub fn new(name: String, root: PathBuf, cache_directory: PathBuf, args: Vec<String>) -> Engine {
+    pub fn new(config: Config, args: Vec<String>) -> Engine {
         Engine {
-            name,
-            root,
-            cache_directory,
+            config,
             args,
         }
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        &self.config.name
     }
 
     pub fn root(&self) -> &Path {
-        &self.root
+        &self.config.root
     }
 
     pub fn cache_directory(&self) -> &Path {
-        &self.cache_directory
+        &self.config.cache_directory
     }
 
     pub fn run(&self) -> Result<i32> {
@@ -42,7 +44,7 @@ impl Engine {
     pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
         if args.is_empty() {
             return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
-                name: self.name.to_owned(),
+                name: self.config.name.to_owned(),
                 path: self.libexec_path(),
                 engine: &self,
             }));
@@ -152,11 +154,11 @@ impl Engine {
     }
 
     pub fn display_unknown_subcommand(&self, name: &str) {
-        println!("{}: no such sub command '{}'", self.name, name);
+        println!("{}: no such sub command '{}'", self.config.name, name);
     }
 
     fn libexec_path(&self) -> PathBuf {
-        let mut path = self.root.clone();
+        let mut path = self.config.root.clone();
         path.push("libexec");
         path
     }

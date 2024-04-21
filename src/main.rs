@@ -4,10 +4,10 @@ extern crate clap;
 
 use clap::{value_parser, Arg, ArgGroup, Command};
 
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use sub::engine::Engine;
+use sub::engine::{Config, Engine};
 use sub::error::Error;
 
 fn main() {
@@ -30,7 +30,13 @@ fn main() {
         }
     };
 
-    let sub = Engine::new(args.name, args.root, cache_directory, args.commands);
+    let config = Config {
+        name: args.name,
+        root: args.root,
+        cache_directory,
+    };
+
+    let sub = Engine::new(config, args.commands);
 
     match sub.run() {
         Ok(code) => exit(code),
@@ -125,7 +131,8 @@ fn parse_cli_args() -> Args {
                 if let Some(relative) = args.get_one::<PathBuf>("relative") {
                     path.push(relative)
                 };
-                path.canonicalize().expect("Invalid `bin` or `relative` arguments")
+                path.canonicalize()
+                    .expect("Invalid `bin` or `relative` arguments")
             }
         },
     }
