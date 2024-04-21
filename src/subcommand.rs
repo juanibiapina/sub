@@ -1,18 +1,21 @@
 use std::path::PathBuf;
-use std::process::Command;
+use std::process;
 
 use crate::error::{Error, Result};
 use crate::parser;
 use crate::engine::Engine;
 
-pub enum SubCommand<'e> {
-    TopLevelCommand(TopLevelCommand<'e>),
-    InternalCommand(InternalCommand<'e>),
-    ExternalCommand(ExternalCommand<'e>),
+pub trait Command {
+    fn name(&self) -> &str;
+    fn summary(&self) -> String;
+    fn usage(&self) -> String;
+    fn help(&self) -> String;
+    fn completions(&self) -> Result<i32>;
+    fn invoke(&self) -> Result<i32>;
 }
 
-pub fn internal_help(engine: &Engine, args: Vec<String>) -> SubCommand {
-    SubCommand::InternalCommand(InternalCommand{
+pub fn internal_help(engine: &Engine, args: Vec<String>) -> InternalCommand {
+    InternalCommand {
         name: "help",
         summary: "Display help for a sub command",
         help: "A command is considered documented if it starts with a comment block
@@ -68,11 +71,11 @@ pub fn internal_help(engine: &Engine, args: Vec<String>) -> SubCommand {
 
                 Ok(0)
             },
-    })
+    }
 }
 
-pub fn internal_commands(engine: &Engine, args: Vec<String>) -> SubCommand {
-    SubCommand::InternalCommand(InternalCommand{
+pub fn internal_commands(engine: &Engine, args: Vec<String>) -> InternalCommand {
+    InternalCommand {
         name: "commands",
         summary: "List available commands",
         help: "",
@@ -85,11 +88,11 @@ pub fn internal_commands(engine: &Engine, args: Vec<String>) -> SubCommand {
 
             Ok(0)
         },
-    })
+    }
 }
 
-pub fn internal_completions(engine: &Engine, args: Vec<String>) -> SubCommand {
-    SubCommand::InternalCommand(InternalCommand{
+pub fn internal_completions(engine: &Engine, args: Vec<String>) -> InternalCommand {
+    InternalCommand {
         name: "completions",
         summary: "List completions for a sub command",
         help: "",
@@ -102,175 +105,175 @@ pub fn internal_completions(engine: &Engine, args: Vec<String>) -> SubCommand {
                 Ok(1)
             }
         },
-    })
+    }
 }
 
-impl<'e> SubCommand<'e> {
-    pub fn name(&self) -> &str {
-        match self {
-            SubCommand::TopLevelCommand(c) => &c.name,
-            SubCommand::InternalCommand(c) => &c.name,
-            SubCommand::ExternalCommand(c) => c.names.last().unwrap(),
-        }
+impl<'e> Command for ExternalCommand<'e> {
+    fn name(&self) -> &str {
+        self.names.last().unwrap()
     }
 
-    pub fn summary(&self) -> String {
-        match self {
-            SubCommand::TopLevelCommand(c) => {
-                let mut readme_path = c.path.clone();
-                readme_path.push("README");
+    fn summary(&self) -> String {
+        if self.path.is_dir() {
+            let mut readme_path = self.path.clone();
+            readme_path.push("README");
 
-                if readme_path.exists() {
-                    parser::extract_docs(&readme_path).0
-                } else {
-                    "".to_owned()
-                }
-            },
-            SubCommand::InternalCommand(c) => c.summary.to_owned(),
-            SubCommand::ExternalCommand(c) => {
-                if c.path.is_dir() {
-                    let mut readme_path = c.path.clone();
-                    readme_path.push("README");
-
-                    if readme_path.exists() {
-                        parser::extract_docs(&readme_path).0
-                    } else {
-                        "".to_owned()
-                    }
-                } else {
-                    parser::extract_docs(&c.path).0
-                }
-            },
-        }
-    }
-
-    pub fn usage(&self) -> String {
-        match self {
-            SubCommand::TopLevelCommand(c) => {
-                format!("Usage: {} [<subcommands>] [<args>]", c.name)
-            },
-            SubCommand::InternalCommand(_) => {
+            if readme_path.exists() {
+                parser::extract_docs(&readme_path).0
+            } else {
                 "".to_owned()
-            },
-            SubCommand::ExternalCommand(c) => {
-                let mut cmd = vec![c.engine.name().to_owned()];
-                cmd.extend(c.names.iter().map(|s| s.to_owned()));
-
-                let cmd = cmd.join(" ");
-
-                if c.path.is_dir() {
-                    vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
-                } else {
-                    let usage = parser::extract_docs(&c.path).1;
-                    if usage.is_empty() {
-                        format!("Usage: {}", cmd)
-                    } else {
-                        usage.replace("{cmd}", &cmd)
-                    }
-                }
-            },
+            }
+        } else {
+            parser::extract_docs(&self.path).0
         }
     }
 
-    pub fn help(&self) -> String {
-        match self {
-            SubCommand::TopLevelCommand(c) => {
-                let mut readme_path = c.path.clone();
-                readme_path.push("README");
+    fn usage(&self) -> String {
+        let mut cmd = vec![self.engine.name().to_owned()];
+        cmd.extend(self.names.iter().map(|s| s.to_owned()));
 
-                if readme_path.exists() {
-                    parser::extract_docs(&readme_path).2
-                } else {
-                    "".to_owned()
-                }
-            },
-            SubCommand::InternalCommand(c) => {
-                c.help.to_owned()
-            },
-            SubCommand::ExternalCommand(c) => {
-                if c.path.is_dir() {
-                    let mut readme_path = c.path.clone();
-                    readme_path.push("README");
+        let cmd = cmd.join(" ");
 
-                    if readme_path.exists() {
-                        parser::extract_docs(&readme_path).2
-                    } else {
-                        "".to_owned()
-                    }
-                } else {
-                    parser::extract_docs(&c.path).2
-                }
-            },
+        if self.path.is_dir() {
+            vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
+        } else {
+            let usage = parser::extract_docs(&self.path).1;
+            if usage.is_empty() {
+                format!("Usage: {}", cmd)
+            } else {
+                usage.replace("{cmd}", &cmd)
+            }
         }
     }
 
-    pub fn completions(&self) -> Result<i32> {
-        match self {
-            SubCommand::TopLevelCommand(c) => {
-                let commands = internal_commands(c.engine, Vec::new());
-                commands.invoke()
-            },
-            SubCommand::InternalCommand(_) => Ok(0), // TODO
-            SubCommand::ExternalCommand(c) => {
-                if c.path.is_dir() {
-                    let commands = internal_commands(c.engine, c.names.clone());
-                    commands.invoke()
-                } else {
-                    if parser::provides_completions(&c.path) {
-                        let mut command = Command::new(&c.path);
+    fn help(&self) -> String {
+        if self.path.is_dir() {
+            let mut readme_path = self.path.clone();
+            readme_path.push("README");
 
-                        command.arg("--complete");
-                        command.env(format!("_{}_ROOT", c.engine.name().to_uppercase()), c.engine.root());
-
-                        let status = command.status().unwrap();
-
-                        return match status.code() {
-                            Some(code) => Ok(code),
-                            None => Err(Error::SubCommandInterrupted),
-                        };
-                    }
-
-                    Ok(0)
-
-
-                }
-
-            },
+            if readme_path.exists() {
+                parser::extract_docs(&readme_path).2
+            } else {
+                "".to_owned()
+            }
+        } else {
+            parser::extract_docs(&self.path).2
         }
     }
 
-    pub fn invoke(&self) -> Result<i32> {
-        match self {
-            SubCommand::TopLevelCommand(c) => {
-                let help_command = internal_help(c.engine, Vec::new());
-                help_command.invoke()
-            },
-            SubCommand::InternalCommand(c) => (c.func)(c.engine, c.args.clone()),
-            SubCommand::ExternalCommand(c) => {
-                if !c.path.exists() {
-                    return Err(Error::UnknownSubCommand(c.names.last().unwrap().to_owned()));
-                }
+    fn completions(&self) -> Result<i32> {
+        if self.path.is_dir() {
+            let commands = internal_commands(self.engine, self.names.clone());
+            commands.invoke()
+        } else {
+            if parser::provides_completions(&self.path) {
+                let mut command = process::Command::new(&self.path);
 
-                if c.path.is_dir() {
-                    let help_command = internal_help(c.engine, c.names.clone());
-                    help_command.invoke()
-                } else {
-                    let mut command = Command::new(&c.path);
+                command.arg("--complete");
+                command.env(format!("_{}_ROOT", self.engine.name().to_uppercase()), self.engine.root());
 
-                    command.args(&c.args);
+                let status = command.status().unwrap();
 
-                    command.env(format!("_{}_ROOT", c.engine.name().to_uppercase()), c.engine.root());
-                    command.env(format!("_{}_CACHE", c.engine.name().to_uppercase()), c.engine.cache_directory());
-
-                    let status = command.status().unwrap();
-
-                    match status.code() {
-                        Some(code) => Ok(code),
-                        None => Err(Error::SubCommandInterrupted),
-                    }
-                }
-            },
+                return match status.code() {
+                    Some(code) => Ok(code),
+                    None => Err(Error::SubCommandInterrupted),
+                };
+            }
+            Ok(0)
         }
+    }
+
+    fn invoke(&self) -> Result<i32> {
+        if !self.path.exists() {
+            return Err(Error::UnknownSubCommand(self.names.last().unwrap().to_owned()));
+        }
+
+        if self.path.is_dir() {
+            let help_command = internal_help(self.engine, self.names.clone());
+            help_command.invoke()
+        } else {
+            let mut command = process::Command::new(&self.path);
+
+            command.args(&self.args);
+
+            command.env(format!("_{}_ROOT", self.engine.name().to_uppercase()), self.engine.root());
+            command.env(format!("_{}_CACHE", self.engine.name().to_uppercase()), self.engine.cache_directory());
+
+            let status = command.status().unwrap();
+
+            match status.code() {
+                Some(code) => Ok(code),
+                None => Err(Error::SubCommandInterrupted),
+            }
+        }
+    }
+}
+
+impl<'e> Command for TopLevelCommand<'e> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn summary(&self) -> String {
+        let mut readme_path = self.path.clone();
+        readme_path.push("README");
+
+        if readme_path.exists() {
+            parser::extract_docs(&readme_path).0
+        } else {
+            "".to_owned()
+        }
+    }
+
+    fn usage(&self) -> String {
+        format!("Usage: {} [<subcommands>] [<args>]", self.name)
+    }
+
+    fn help(&self) -> String {
+        let mut readme_path = self.path.clone();
+        readme_path.push("README");
+
+        if readme_path.exists() {
+            parser::extract_docs(&readme_path).2
+        } else {
+            "".to_owned()
+        }
+    }
+
+    fn completions(&self) -> Result<i32> {
+        let commands = internal_commands(self.engine, Vec::new());
+        commands.invoke()
+    }
+
+    fn invoke(&self) -> Result<i32> {
+        let help_command = internal_help(self.engine, Vec::new());
+        help_command.invoke()
+    }
+}
+
+impl<'e> Command for InternalCommand<'e> {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn summary(&self) -> String {
+        self.summary.to_owned()
+    }
+
+    fn usage(&self) -> String {
+        "".to_owned()
+    }
+
+    fn help(&self) -> String {
+        self.help.to_owned()
+    }
+
+    fn completions(&self) -> Result<i32> {
+        Ok(0) // TODO
+    }
+
+    fn invoke(&self) -> Result<i32> {
+        (self.func)(self.engine, self.args.clone())
     }
 }
 

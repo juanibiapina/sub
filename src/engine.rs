@@ -2,7 +2,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-use crate::subcommand::{SubCommand, ExternalCommand, TopLevelCommand, internal_completions, internal_help, internal_commands};
+use crate::subcommand::{Command, ExternalCommand, TopLevelCommand, internal_completions, internal_help, internal_commands};
 use crate::error::Result;
 use crate::error::Error;
 
@@ -35,9 +35,9 @@ impl Engine {
         &self.config.cache_directory
     }
 
-    pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
+    pub fn subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
         if args.is_empty() {
-            return Ok(SubCommand::TopLevelCommand(TopLevelCommand{
+            return Ok(Box::new(TopLevelCommand {
                 name: self.config.name.to_owned(),
                 path: self.libexec_path(),
                 engine: &self,
@@ -47,16 +47,16 @@ impl Engine {
         let name = &args[0];
 
         match name.as_ref() {
-            "help" => Ok(internal_help(&self, args.split_off(1))),
-            "commands" => Ok(internal_commands(&self, args.split_off(1))),
-            "completions" => Ok(internal_completions(&self, args.split_off(1))),
+            "help" => Ok(Box::new(internal_help(&self, args.split_off(1)))),
+            "commands" => Ok(Box::new(internal_commands(&self, args.split_off(1)))),
+            "completions" => Ok(Box::new(internal_completions(&self, args.split_off(1)))),
             _ => {
                 self.external_subcommand(args)
             },
         }
     }
 
-    fn external_subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {
+    fn external_subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
         let mut path = self.libexec_path();
         let mut names = Vec::new();
 
@@ -79,7 +79,7 @@ impl Engine {
 
             if args.is_empty() {
                 if path.is_dir() {
-                    return Ok(SubCommand::ExternalCommand(ExternalCommand{
+                    return Ok(Box::new(ExternalCommand {
                         names,
                         path,
                         args,
@@ -91,7 +91,7 @@ impl Engine {
                     return Err(Error::NonExecutable(head.to_owned()));
                 }
 
-                return Ok(SubCommand::ExternalCommand(ExternalCommand{
+                return Ok(Box::new(ExternalCommand {
                     names,
                     path,
                     args,
@@ -107,7 +107,7 @@ impl Engine {
                 return Err(Error::NonExecutable(head.to_owned()));
             }
 
-            return Ok(SubCommand::ExternalCommand(ExternalCommand{
+            return Ok(Box::new(ExternalCommand {
                 names,
                 path,
                 args,
@@ -116,7 +116,7 @@ impl Engine {
         }
     }
 
-    pub fn subcommands(&self, names: Vec<String>) -> Vec<SubCommand> {
+    pub fn subcommands(&self, names: Vec<String>) -> Vec<Box<dyn Command + '_>> {
         let include_internal = names.is_empty();
 
         let mut libexec_path = self.libexec_path();
@@ -138,8 +138,8 @@ impl Engine {
         }
 
         if include_internal {
-            subcommands.push(internal_help(&self, Vec::new()));
-            subcommands.push(internal_commands(&self, Vec::new()));
+            subcommands.push(Box::new(internal_help(&self, Vec::new())));
+            subcommands.push(Box::new(internal_commands(&self, Vec::new())));
         }
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
