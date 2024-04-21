@@ -2,7 +2,12 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
-use crate::commands::{Command, ExternalCommand, TopLevelCommand, internal_completions, internal_help, internal_commands};
+use crate::commands::Command;
+use crate::commands::external::ExternalCommand;
+use crate::commands::toplevel::TopLevelCommand;
+use crate::commands::internal::help::internal_help;
+use crate::commands::internal::commands::internal_commands;
+use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
 use crate::error::Error;
 
