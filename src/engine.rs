@@ -14,14 +14,12 @@ pub struct Config {
 
 pub struct Engine {
     config: Config,
-    args: Vec<String>,
 }
 
 impl Engine {
-    pub fn new(config: Config, args: Vec<String>) -> Engine {
+    pub fn new(config: Config) -> Engine {
         Engine {
             config,
-            args,
         }
     }
 
@@ -35,10 +33,6 @@ impl Engine {
 
     pub fn cache_directory(&self) -> &Path {
         &self.config.cache_directory
-    }
-
-    pub fn run(&self) -> Result<i32> {
-        self.subcommand(self.args.clone())?.invoke()
     }
 
     pub fn subcommand(&self, mut args: Vec<String>) -> Result<SubCommand> {

@@ -36,15 +36,26 @@ fn main() {
         cache_directory,
     };
 
-    let sub = Engine::new(config, args.commands);
+    let engine = Engine::new(config);
 
-    match sub.run() {
+    let subcommand = match engine.subcommand(args.commands.clone()) {
+        Ok(subcommand) => subcommand,
+        Err(Error::NoCompletions) => exit(1),
+        Err(Error::SubCommandInterrupted) => exit(1),
+        Err(Error::NonExecutable(_)) => exit(1),
+        Err(Error::UnknownSubCommand(name)) => {
+            engine.display_unknown_subcommand(&name);
+            exit(1);
+        }
+    };
+
+    match subcommand.invoke() {
         Ok(code) => exit(code),
         Err(Error::NoCompletions) => exit(1),
         Err(Error::SubCommandInterrupted) => exit(1),
         Err(Error::NonExecutable(_)) => exit(1),
         Err(Error::UnknownSubCommand(name)) => {
-            sub.display_unknown_subcommand(&name);
+            engine.display_unknown_subcommand(&name);
             exit(1);
         }
     }
