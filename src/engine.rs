@@ -10,6 +10,7 @@ use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
 use crate::error::Error;
 
+#[derive(Clone)]
 pub struct Config {
     pub name: String,
     pub root: PathBuf,
@@ -39,8 +40,8 @@ impl Engine {
         &self.config.cache_directory
     }
 
-    pub fn subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
-        if args.is_empty() {
+    pub fn subcommand(&self, mut names: Vec<String>) -> Result<Box<dyn Command + '_>> {
+        if names.is_empty() {
             return Ok(Box::new(TopLevelCommand {
                 name: self.config.name.to_owned(),
                 path: self.libexec_path(),
@@ -48,14 +49,14 @@ impl Engine {
             }));
         }
 
-        let name = &args[0];
+        let name = &names[0];
 
         match name.as_ref() {
-            "help" => Ok(Box::new(internal_help(&self, args.split_off(1)))),
-            "commands" => Ok(Box::new(internal_commands(&self, args.split_off(1)))),
-            "completions" => Ok(Box::new(internal_completions(&self, args.split_off(1)))),
+            "help" => Ok(Box::new(internal_help(&self, names.split_off(1)))),
+            "commands" => Ok(Box::new(internal_commands(&self, names.split_off(1)))),
+            "completions" => Ok(Box::new(internal_completions(&self, names.split_off(1)))),
             _ => {
-                self.external_subcommand(args)
+                self.external_subcommand(names)
             },
         }
     }
@@ -118,10 +119,6 @@ impl Engine {
                 engine: &self,
             }));
         }
-    }
-
-    pub fn display_unknown_subcommand(&self, name: &str) {
-        println!("{}: no such sub command '{}'", self.config.name, name);
     }
 
     pub fn libexec_path(&self) -> PathBuf {

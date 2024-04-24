@@ -36,7 +36,7 @@ fn main() {
         cache_directory,
     };
 
-    let engine = Engine::new(config);
+    let engine = Engine::new(config.clone());
 
     let subcommand = match engine.subcommand(args.commands.clone()) {
         Ok(subcommand) => subcommand,
@@ -44,7 +44,7 @@ fn main() {
         Err(Error::SubCommandInterrupted) => exit(1),
         Err(Error::NonExecutable(_)) => exit(1),
         Err(Error::UnknownSubCommand(name)) => {
-            engine.display_unknown_subcommand(&name);
+            display_unknown_subcommand(&config, &name);
             exit(1);
         }
     };
@@ -55,10 +55,14 @@ fn main() {
         Err(Error::SubCommandInterrupted) => exit(1),
         Err(Error::NonExecutable(_)) => exit(1),
         Err(Error::UnknownSubCommand(name)) => {
-            engine.display_unknown_subcommand(&name);
+            display_unknown_subcommand(&config, &name);
             exit(1);
         }
     }
+}
+
+pub fn display_unknown_subcommand(config: &Config, name: &str) {
+    println!("{}: no such sub command '{}'", config.name, name);
 }
 
 struct Args {
