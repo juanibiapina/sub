@@ -25,7 +25,7 @@ impl<'e> Command for InternalCommand<'e> {
     }
 
     fn usage(&self) -> String {
-        "".to_owned()
+        "".to_owned() // TODO
     }
 
     fn help(&self) -> String {
