@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 use std::process;
 
@@ -66,6 +67,30 @@ impl<'e> Command for ExternalCommand<'e> {
         } else {
             parser::extract_docs(&self.path).2
         }
+    }
+
+    fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
+        let mut libexec_path = self.engine.libexec_path();
+        libexec_path.extend(&self.names);
+
+        let mut subcommands = Vec::new();
+
+        if libexec_path.is_dir() {
+            for entry in fs::read_dir(libexec_path).unwrap() {
+                let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
+
+                let mut names = self.names.clone();
+                names.push(name);
+
+                if let Ok(subcommand) = self.engine.external_subcommand(names) {
+                    subcommands.push(subcommand);
+                }
+            }
+        }
+
+        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
+
+        return subcommands;
     }
 
     fn completions(&self) -> Result<i32> {

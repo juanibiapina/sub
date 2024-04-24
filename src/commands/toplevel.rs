@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 
 use crate::error::Result;
@@ -42,6 +43,29 @@ impl<'e> Command for TopLevelCommand<'e> {
         } else {
             "".to_owned()
         }
+    }
+
+    fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
+        let libexec_path = self.engine.libexec_path();
+
+        let mut subcommands = Vec::new();
+
+        if libexec_path.is_dir() {
+            for entry in fs::read_dir(libexec_path).unwrap() {
+                let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
+
+                if let Ok(subcommand) = self.engine.external_subcommand(vec![name]) {
+                    subcommands.push(subcommand);
+                }
+            }
+        }
+
+        subcommands.push(Box::new(internal_help(self.engine, Vec::new())));
+        subcommands.push(Box::new(internal_commands(self.engine, Vec::new())));
+
+        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
+
+        subcommands
     }
 
     fn completions(&self) -> Result<i32> {

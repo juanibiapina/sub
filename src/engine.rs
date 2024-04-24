@@ -1,4 +1,3 @@
-use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
@@ -61,7 +60,7 @@ impl Engine {
         }
     }
 
-    fn external_subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
+    pub fn external_subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
         let mut path = self.libexec_path();
         let mut names = Vec::new();
 
@@ -121,42 +120,11 @@ impl Engine {
         }
     }
 
-    pub fn subcommands(&self, names: Vec<String>) -> Vec<Box<dyn Command + '_>> {
-        let include_internal = names.is_empty();
-
-        let mut libexec_path = self.libexec_path();
-        libexec_path.extend(&names);
-
-        let mut subcommands = Vec::new();
-
-        if libexec_path.is_dir() {
-            for entry in fs::read_dir(libexec_path).unwrap() {
-                let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
-
-                let mut names = names.clone();
-                names.push(name);
-
-                if let Ok(subcommand) = self.external_subcommand(names) {
-                    subcommands.push(subcommand);
-                }
-            }
-        }
-
-        if include_internal {
-            subcommands.push(Box::new(internal_help(&self, Vec::new())));
-            subcommands.push(Box::new(internal_commands(&self, Vec::new())));
-        }
-
-        subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
-
-        subcommands
-    }
-
     pub fn display_unknown_subcommand(&self, name: &str) {
         println!("{}: no such sub command '{}'", self.config.name, name);
     }
 
-    fn libexec_path(&self) -> PathBuf {
+    pub fn libexec_path(&self) -> PathBuf {
         let mut path = self.config.root.clone();
         path.push("libexec");
         path

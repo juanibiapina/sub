@@ -32,6 +32,11 @@ impl<'e> Command for InternalCommand<'e> {
         self.help.to_owned()
     }
 
+    fn subcommands(&self) -> Vec<Box<dyn Command>> {
+        // none of the internal subcommands currently have any subcommands
+        return Vec::new();
+    }
+
     fn completions(&self) -> Result<i32> {
         Ok(0) // TODO
     }

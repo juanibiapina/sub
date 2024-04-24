@@ -10,7 +10,7 @@ pub fn internal_commands(engine: &Engine, args: Vec<String>) -> internal::Intern
         args,
         engine,
         func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-            for subcommand in engine.subcommands(args) {
+            for subcommand in engine.subcommand(args)?.subcommands() {
                 println!("{}", subcommand.name());
             }
 

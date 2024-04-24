@@ -33,7 +33,7 @@ pub fn internal_help(engine: &Engine, args: Vec<String>) -> internal::InternalCo
                     println!("{}", help);
                 }
 
-                let subcommands = engine.subcommands(args.clone());
+                let subcommands = subcommand.subcommands();
                 if !subcommands.is_empty() {
                     println!();
                     println!("Available subcommands:");
