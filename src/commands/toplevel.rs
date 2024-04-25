@@ -46,7 +46,7 @@ impl<'e> Command for TopLevelCommand<'e> {
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
-        let libexec_path = self.engine.libexec_path();
+        let libexec_path = self.engine.config.libexec_path();
 
         let mut subcommands = Vec::new();
 

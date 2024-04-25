@@ -70,7 +70,7 @@ impl<'e> Command for ExternalCommand<'e> {
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
-        let mut libexec_path = self.engine.libexec_path();
+        let mut libexec_path = self.engine.config.libexec_path();
         libexec_path.extend(&self.names);
 
         let mut subcommands = Vec::new();

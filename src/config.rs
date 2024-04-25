@@ -6,3 +6,11 @@ pub struct Config {
     pub root: PathBuf,
     pub cache_directory: PathBuf,
 }
+
+impl Config {
+    pub fn libexec_path(&self) -> PathBuf {
+        let mut path = self.root.clone();
+        path.push("libexec");
+        return path;
+    }
+}

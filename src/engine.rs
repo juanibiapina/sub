@@ -1,5 +1,5 @@
 use std::os::unix::fs::PermissionsExt;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use crate::config::Config;
 use crate::commands::Command;
@@ -12,7 +12,7 @@ use crate::error::Result;
 use crate::error::Error;
 
 pub struct Engine {
-    config: Config,
+    pub config: Config,
 }
 
 impl Engine {
@@ -38,7 +38,7 @@ impl Engine {
         if names.is_empty() {
             return Ok(Box::new(TopLevelCommand {
                 name: self.config.name.to_owned(),
-                path: self.libexec_path(),
+                path: self.config.libexec_path(),
                 engine: &self,
             }));
         }
@@ -56,7 +56,7 @@ impl Engine {
     }
 
     pub fn external_subcommand(&self, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
-        let mut path = self.libexec_path();
+        let mut path = self.config.libexec_path();
         let mut names = Vec::new();
 
         loop {
@@ -113,11 +113,5 @@ impl Engine {
                 engine: &self,
             }));
         }
-    }
-
-    pub fn libexec_path(&self) -> PathBuf {
-        let mut path = self.config.root.clone();
-        path.push("libexec");
-        path
     }
 }
