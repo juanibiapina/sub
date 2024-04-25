@@ -2,21 +2,22 @@ use std::fs;
 use std::path::PathBuf;
 use std::process;
 
+use crate::config::Config;
 use crate::parser;
 use crate::error::{Error, Result};
-use crate::engine::Engine;
 use crate::commands::Command;
 use crate::commands::internal::commands::internal_commands;
 use crate::commands::internal::help::internal_help;
+use crate::commands::external_subcommand;
 
-pub struct ExternalCommand<'e> {
+pub struct ExternalCommand<'a> {
     pub names: Vec<String>,
     pub path: PathBuf,
     pub args: Vec<String>,
-    pub engine: &'e Engine,
+    pub config: &'a Config,
 }
 
-impl<'e> Command for ExternalCommand<'e> {
+impl<'a> Command for ExternalCommand<'a> {
     fn name(&self) -> &str {
         self.names.last().unwrap()
     }
@@ -37,7 +38,7 @@ impl<'e> Command for ExternalCommand<'e> {
     }
 
     fn usage(&self) -> String {
-        let mut cmd = vec![self.engine.config.name.to_owned()];
+        let mut cmd = vec![self.config.name.to_owned()];
         cmd.extend(self.names.iter().map(|s| s.to_owned()));
 
         let cmd = cmd.join(" ");
@@ -70,7 +71,7 @@ impl<'e> Command for ExternalCommand<'e> {
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
-        let mut libexec_path = self.engine.config.libexec_path();
+        let mut libexec_path = self.config.libexec_path();
         libexec_path.extend(&self.names);
 
         let mut subcommands = Vec::new();
@@ -82,7 +83,7 @@ impl<'e> Command for ExternalCommand<'e> {
                 let mut names = self.names.clone();
                 names.push(name);
 
-                if let Ok(subcommand) = self.engine.external_subcommand(names) {
+                if let Ok(subcommand) = external_subcommand(self.config, names) {
                     subcommands.push(subcommand);
                 }
             }
@@ -95,14 +96,14 @@ impl<'e> Command for ExternalCommand<'e> {
 
     fn completions(&self) -> Result<i32> {
         if self.path.is_dir() {
-            let commands = internal_commands(self.engine, self.names.clone());
+            let commands = internal_commands(self.config, self.names.clone());
             commands.invoke()
         } else {
             if parser::provides_completions(&self.path) {
                 let mut command = process::Command::new(&self.path);
 
                 command.arg("--complete");
-                command.env(format!("_{}_ROOT", self.engine.config.name.to_uppercase()), &self.engine.config.root);
+                command.env(format!("_{}_ROOT", self.config.name.to_uppercase()), &self.config.root);
 
                 let status = command.status().unwrap();
 
@@ -121,15 +122,15 @@ impl<'e> Command for ExternalCommand<'e> {
         }
 
         if self.path.is_dir() {
-            let help_command = internal_help(self.engine, self.names.clone());
+            let help_command = internal_help(self.config, self.names.clone());
             help_command.invoke()
         } else {
             let mut command = process::Command::new(&self.path);
 
             command.args(&self.args);
 
-            command.env(format!("_{}_ROOT", self.engine.config.name.to_uppercase()), &self.engine.config.root);
-            command.env(format!("_{}_CACHE", self.engine.config.name.to_uppercase()), &self.engine.config.cache_directory);
+            command.env(format!("_{}_ROOT", self.config.name.to_uppercase()), &self.config.root);
+            command.env(format!("_{}_CACHE", self.config.name.to_uppercase()), &self.config.cache_directory);
 
             let status = command.status().unwrap();
 

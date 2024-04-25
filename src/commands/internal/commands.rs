@@ -1,16 +1,17 @@
 use crate::error::Result;
-use crate::engine::Engine;
+use crate::config::Config;
 use crate::commands::internal;
+use crate::commands::subcommand;
 
-pub fn internal_commands(engine: &Engine, args: Vec<String>) -> internal::InternalCommand {
+pub fn internal_commands(config: &Config, args: Vec<String>) -> internal::InternalCommand {
     internal::InternalCommand {
         name: "commands",
         summary: "List available commands",
         help: "",
         args,
-        engine,
-        func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-            for subcommand in engine.subcommand(args)?.subcommands() {
+        config,
+        func: |config: &Config, args: Vec<String>| -> Result<i32> {
+            for subcommand in subcommand(config, args)?.subcommands() {
                 println!("{}", subcommand.name());
             }
 

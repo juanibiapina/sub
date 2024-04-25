@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use sub::config::Config;
-use sub::engine::Engine;
+use sub::commands::subcommand;
 use sub::error::Error;
 
 fn main() {
@@ -37,9 +37,7 @@ fn main() {
         cache_directory,
     };
 
-    let engine = Engine::new(config.clone());
-
-    let subcommand = match engine.subcommand(args.commands.clone()) {
+    let subcommand = match subcommand(&config, args.commands.clone()) {
         Ok(subcommand) => subcommand,
         Err(Error::NoCompletions) => exit(1),
         Err(Error::SubCommandInterrupted) => exit(1),

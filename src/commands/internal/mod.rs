@@ -1,21 +1,21 @@
 use crate::error::Result;
-use crate::engine::Engine;
+use crate::config::Config;
 use crate::commands::Command;
 
 pub mod help;
 pub mod commands;
 pub mod completions;
 
-pub struct InternalCommand<'e> {
+pub struct InternalCommand<'a> {
     pub name: &'static str,
     pub summary: &'static str,
     pub help: &'static str,
     pub args: Vec<String>,
-    pub engine: &'e Engine,
-    pub func: fn(&Engine, Vec<String>) -> Result<i32>,
+    pub config: &'a Config,
+    pub func: fn(&Config, Vec<String>) -> Result<i32>,
 }
 
-impl<'e> Command for InternalCommand<'e> {
+impl<'a> Command for InternalCommand<'a> {
     fn name(&self) -> &str {
         &self.name
     }
@@ -42,6 +42,6 @@ impl<'e> Command for InternalCommand<'e> {
     }
 
     fn invoke(&self) -> Result<i32> {
-        (self.func)(self.engine, self.args.clone())
+        (self.func)(self.config, self.args.clone())
     }
 }

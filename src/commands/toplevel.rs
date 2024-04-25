@@ -1,20 +1,21 @@
 use std::fs;
 use std::path::PathBuf;
 
+use crate::config::Config;
 use crate::error::Result;
 use crate::parser;
-use crate::engine::Engine;
 use crate::commands::Command;
 use crate::commands::internal::help::internal_help;
 use crate::commands::internal::commands::internal_commands;
+use crate::commands::external_subcommand;
 
-pub struct TopLevelCommand<'e> {
+pub struct TopLevelCommand<'a> {
     pub name: String,
     pub path: PathBuf,
-    pub engine: &'e Engine,
+    pub config: &'a Config,
 }
 
-impl<'e> Command for TopLevelCommand<'e> {
+impl<'a> Command for TopLevelCommand<'a> {
     fn name(&self) -> &str {
         &self.name
     }
@@ -46,7 +47,7 @@ impl<'e> Command for TopLevelCommand<'e> {
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
-        let libexec_path = self.engine.config.libexec_path();
+        let libexec_path = self.config.libexec_path();
 
         let mut subcommands = Vec::new();
 
@@ -54,14 +55,14 @@ impl<'e> Command for TopLevelCommand<'e> {
             for entry in fs::read_dir(libexec_path).unwrap() {
                 let name = entry.unwrap().file_name().to_str().unwrap().to_owned();
 
-                if let Ok(subcommand) = self.engine.external_subcommand(vec![name]) {
+                if let Ok(subcommand) = external_subcommand(self.config, vec![name]) {
                     subcommands.push(subcommand);
                 }
             }
         }
 
-        subcommands.push(Box::new(internal_help(self.engine, Vec::new())));
-        subcommands.push(Box::new(internal_commands(self.engine, Vec::new())));
+        subcommands.push(Box::new(internal_help(self.config, Vec::new())));
+        subcommands.push(Box::new(internal_commands(self.config, Vec::new())));
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
@@ -69,12 +70,12 @@ impl<'e> Command for TopLevelCommand<'e> {
     }
 
     fn completions(&self) -> Result<i32> {
-        let commands = internal_commands(self.engine, Vec::new());
+        let commands = internal_commands(self.config, Vec::new());
         commands.invoke()
     }
 
     fn invoke(&self) -> Result<i32> {
-        let help_command = internal_help(self.engine, Vec::new());
+        let help_command = internal_help(self.config, Vec::new());
         help_command.invoke()
     }
 }

@@ -1,8 +1,9 @@
 use crate::error::Result;
-use crate::engine::Engine;
+use crate::config::Config;
 use crate::commands::internal;
+use crate::commands::subcommand;
 
-pub fn internal_help(engine: &Engine, args: Vec<String>) -> internal::InternalCommand {
+pub fn internal_help(config: &Config, args: Vec<String>) -> internal::InternalCommand {
     internal::InternalCommand {
         name: "help",
         summary: "Display help for a sub command",
@@ -12,9 +13,9 @@ pub fn internal_help(engine: &Engine, args: Vec<String>) -> internal::InternalCo
             The remainder of the comment block is displayed as extended
             documentation.",
             args,
-            engine,
-            func: |engine: &Engine, args: Vec<String>| -> Result<i32> {
-                let subcommand = engine.subcommand(args.clone())?;
+            config,
+            func: |config: &Config, args: Vec<String>| -> Result<i32> {
+                let subcommand = subcommand(config, args.clone())?;
 
                 let usage = subcommand.usage();
                 if !usage.is_empty() {
@@ -54,7 +55,7 @@ pub fn internal_help(engine: &Engine, args: Vec<String>) -> internal::InternalCo
                     println!();
                     let mut cs = args.clone();
                     cs.push("<command>".to_owned());
-                    println!("Use '{} help {}' for information on a specific command.", engine.config.name, cs.join(" "));
+                    println!("Use '{} help {}' for information on a specific command.", config.name, cs.join(" "));
                 }
 
                 Ok(0)
