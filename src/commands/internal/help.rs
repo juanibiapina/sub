@@ -54,7 +54,7 @@ pub fn internal_help(engine: &Engine, args: Vec<String>) -> internal::InternalCo
                     println!();
                     let mut cs = args.clone();
                     cs.push("<command>".to_owned());
-                    println!("Use '{} help {}' for information on a specific command.", engine.name(), cs.join(" "));
+                    println!("Use '{} help {}' for information on a specific command.", engine.config.name, cs.join(" "));
                 }
 
                 Ok(0)

@@ -1,5 +1,4 @@
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
 
 use crate::config::Config;
 use crate::commands::Command;
@@ -20,18 +19,6 @@ impl Engine {
         Engine {
             config,
         }
-    }
-
-    pub fn name(&self) -> &str {
-        &self.config.name
-    }
-
-    pub fn root(&self) -> &Path {
-        &self.config.root
-    }
-
-    pub fn cache_directory(&self) -> &Path {
-        &self.config.cache_directory
     }
 
     pub fn subcommand(&self, mut names: Vec<String>) -> Result<Box<dyn Command + '_>> {

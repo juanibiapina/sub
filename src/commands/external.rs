@@ -37,7 +37,7 @@ impl<'e> Command for ExternalCommand<'e> {
     }
 
     fn usage(&self) -> String {
-        let mut cmd = vec![self.engine.name().to_owned()];
+        let mut cmd = vec![self.engine.config.name.to_owned()];
         cmd.extend(self.names.iter().map(|s| s.to_owned()));
 
         let cmd = cmd.join(" ");
@@ -102,7 +102,7 @@ impl<'e> Command for ExternalCommand<'e> {
                 let mut command = process::Command::new(&self.path);
 
                 command.arg("--complete");
-                command.env(format!("_{}_ROOT", self.engine.name().to_uppercase()), self.engine.root());
+                command.env(format!("_{}_ROOT", self.engine.config.name.to_uppercase()), &self.engine.config.root);
 
                 let status = command.status().unwrap();
 
@@ -128,8 +128,8 @@ impl<'e> Command for ExternalCommand<'e> {
 
             command.args(&self.args);
 
-            command.env(format!("_{}_ROOT", self.engine.name().to_uppercase()), self.engine.root());
-            command.env(format!("_{}_CACHE", self.engine.name().to_uppercase()), self.engine.cache_directory());
+            command.env(format!("_{}_ROOT", self.engine.config.name.to_uppercase()), &self.engine.config.root);
+            command.env(format!("_{}_CACHE", self.engine.config.name.to_uppercase()), &self.engine.config.cache_directory);
 
             let status = command.status().unwrap();
 
