@@ -7,7 +7,8 @@ use clap::{value_parser, Arg, ArgGroup, Command};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use sub::engine::{Config, Engine};
+use sub::config::Config;
+use sub::engine::Engine;
 use sub::error::Error;
 
 fn main() {

@@ -1,6 +1,7 @@
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
+use crate::config::Config;
 use crate::commands::Command;
 use crate::commands::external::ExternalCommand;
 use crate::commands::toplevel::TopLevelCommand;
@@ -9,13 +10,6 @@ use crate::commands::internal::commands::internal_commands;
 use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
 use crate::error::Error;
-
-#[derive(Clone)]
-pub struct Config {
-    pub name: String,
-    pub root: PathBuf,
-    pub cache_directory: PathBuf,
-}
 
 pub struct Engine {
     config: Config,
