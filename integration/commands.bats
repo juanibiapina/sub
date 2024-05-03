@@ -17,6 +17,15 @@ nested
 no-doc"
 }
 
+@test "commands: filter commands by extension" {
+  fixture "extensions"
+
+  run main commands --extension=sh
+
+  assert_success
+  assert_output "example1.sh"
+}
+
 @test "commands: lists nested commands" {
   fixture "project"
 
