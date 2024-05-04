@@ -4,7 +4,11 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    devenv.url = "github:cachix/devenv";
+
+    devenv = {
+      url = "github:cachix/devenv";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {
@@ -19,6 +23,11 @@
         packages = {
           default = packages.sub;
           sub = pkgs.callPackage ./default.nix { inherit pkgs; };
+        };
+
+        legacyPackages = {
+          default = packages.sub;
+          sub = packages.sub;
         };
 
         lib = {
@@ -78,18 +87,20 @@
           sub = flake-utils.lib.mkApp { drv = packages.sub; };
         };
 
-        devShell = devenv.lib.mkShell {
-          inherit inputs pkgs;
+        devShells = {
+          default = devenv.lib.mkShell {
+            inherit inputs pkgs;
 
-          modules = [
-            {
-              packages = with pkgs; [
-                bats
-              ];
+            modules = [
+              {
+                packages = with pkgs; [
+                  bats
+                ];
 
-              languages.rust.enable = true;
-            }
-          ];
+                languages.rust.enable = true;
+              }
+            ];
+          };
         };
       });
 }

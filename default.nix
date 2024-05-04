@@ -1,6 +1,4 @@
-{ nixpkgs ? <nixpkgs>
-, pkgs ? import nixpkgs { }
-}:
+{ pkgs }:
 
 with pkgs;
 rustPlatform.buildRustPackage rec {
