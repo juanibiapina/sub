@@ -23,7 +23,7 @@
 
         lib = {
           mkSubDerivation = args@{ pname, cmd ? pname, buildInputs ? [ ], ... }:
-            pkgs.stdenv.mkDerivation (args // rec {
+            pkgs.stdenv.mkDerivation (args // {
               buildInputs = [ packages.sub pkgs.rsync ];
 
               buildPhase = "true";
