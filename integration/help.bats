@@ -44,9 +44,6 @@ Use 'main help <command>' for information on a specific command."
 
   assert_success
   assert_output "Usage: main echo
-       main echo [<args>]
-
- --complete  Provides completions
 
 Echo arguments
 
@@ -102,7 +99,7 @@ Use 'main help nested <command>' for information on a specific command."
   run main help nested echo
 
   assert_success
-  assert_output "Usage: main nested echo [<args>]
+  assert_output "Usage: main nested echo
 
 Echo arguments 2
 
@@ -137,7 +134,7 @@ Use 'main help nested double <command>' for information on a specific command."
   run main help nested double echo
 
   assert_success
-  assert_output "Usage: main nested double echo [<args>]
+  assert_output "Usage: main nested double echo
 
 Echo arguments 3
 

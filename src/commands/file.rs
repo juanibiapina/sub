@@ -2,25 +2,29 @@ use std::path::PathBuf;
 use std::process;
 
 use crate::config::Config;
-use crate::parser;
+use crate::parser::{self, Usage};
 use crate::error::{Error, Result};
 use crate::commands::Command;
 
 pub struct FileCommand<'a> {
     names: Vec<String>,
     path: PathBuf,
+    usage: Option<Usage>,
     args: Vec<String>,
     config: &'a Config,
 }
 
 impl<'a> FileCommand<'a> {
     pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Self {
-        Self {
+        let usage = parser::extract_usage(&path);
+
+        return Self {
             names,
             path,
+            usage,
             args,
             config,
-        }
+        };
     }
 }
 
@@ -39,11 +43,9 @@ impl<'a> Command for FileCommand<'a> {
 
         let cmd = cmd.join(" ");
 
-        let usage = parser::extract_docs(&self.path).usage;
-        if usage.is_empty() {
-            format!("Usage: {}", cmd)
-        } else {
-            usage.replace("{cmd}", &cmd)
+        match self.usage {
+            Some(ref usage) => usage.generate(&cmd),
+            None => format!("Usage: {}", cmd),
         }
     }
 
