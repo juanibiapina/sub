@@ -7,10 +7,21 @@ use crate::error::{Error, Result};
 use crate::commands::Command;
 
 pub struct FileCommand<'a> {
-    pub names: Vec<String>,
-    pub path: PathBuf,
-    pub args: Vec<String>,
-    pub config: &'a Config,
+    names: Vec<String>,
+    path: PathBuf,
+    args: Vec<String>,
+    config: &'a Config,
+}
+
+impl<'a> FileCommand<'a> {
+    pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Self {
+        Self {
+            names,
+            path,
+            args,
+            config,
+        }
+    }
 }
 
 impl<'a> Command for FileCommand<'a> {

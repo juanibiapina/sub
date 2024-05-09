@@ -81,12 +81,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
                 return Err(Error::NonExecutable(head.to_owned()));
             }
 
-            return Ok(Box::new(FileCommand {
-                names,
-                path,
-                args,
-                config,
-            }));
+            return Ok(Box::new(FileCommand::new(names, path, args, config)));
         }
 
         if path.is_dir() {
@@ -97,12 +92,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
             return Err(Error::NonExecutable(head.to_owned()));
         }
 
-        return Ok(Box::new(FileCommand {
-            names,
-            path,
-            args,
-            config,
-        }));
+        return Ok(Box::new(FileCommand::new(names, path, args, config)));
     }
 }
 
