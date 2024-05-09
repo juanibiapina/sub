@@ -25,7 +25,7 @@ impl<'a> Command for TopLevelCommand<'a> {
         readme_path.push("README");
 
         if readme_path.exists() {
-            parser::extract_docs(&readme_path).0
+            parser::extract_docs(&readme_path).summary
         } else {
             "".to_owned()
         }
@@ -40,7 +40,7 @@ impl<'a> Command for TopLevelCommand<'a> {
         readme_path.push("README");
 
         if readme_path.exists() {
-            parser::extract_docs(&readme_path).2
+            parser::extract_docs(&readme_path).help
         } else {
             "".to_owned()
         }

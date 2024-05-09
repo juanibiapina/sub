@@ -28,12 +28,12 @@ impl<'a> Command for ExternalCommand<'a> {
             readme_path.push("README");
 
             if readme_path.exists() {
-                parser::extract_docs(&readme_path).0
+                parser::extract_docs(&readme_path).summary
             } else {
                 "".to_owned()
             }
         } else {
-            parser::extract_docs(&self.path).0
+            parser::extract_docs(&self.path).summary
         }
     }
 
@@ -46,7 +46,7 @@ impl<'a> Command for ExternalCommand<'a> {
         if self.path.is_dir() {
             vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
         } else {
-            let usage = parser::extract_docs(&self.path).1;
+            let usage = parser::extract_docs(&self.path).usage;
             if usage.is_empty() {
                 format!("Usage: {}", cmd)
             } else {
@@ -61,12 +61,12 @@ impl<'a> Command for ExternalCommand<'a> {
             readme_path.push("README");
 
             if readme_path.exists() {
-                parser::extract_docs(&readme_path).2
+                parser::extract_docs(&readme_path).help
             } else {
                 "".to_owned()
             }
         } else {
-            parser::extract_docs(&self.path).2
+            parser::extract_docs(&self.path).help
         }
     }
 

@@ -31,7 +31,13 @@ enum Mode {
     Help,
 }
 
-pub fn extract_docs(path: &Path) -> (String, String, String) {
+pub struct Docs {
+    pub summary: String,
+    pub usage: String,
+    pub help: String,
+}
+
+pub fn extract_docs(path: &Path) -> Docs {
     lazy_static! {
         static ref SUMMARY_RE: Regex = Regex::new(r"^# Summary: (.*)$").unwrap();
         static ref USAGE_RE: Regex = Regex::new(r"^# (Usage: .*)$").unwrap();
@@ -114,7 +120,11 @@ pub fn extract_docs(path: &Path) -> (String, String, String) {
         }
     }
 
-    (summary.join("\n"), usage.join("\n").trim().to_owned(), help.join("\n").trim().to_owned())
+    Docs {
+        summary: summary.join("\n"),
+        usage: usage.join("\n").trim().to_owned(),
+        help: help.join("\n").trim().to_owned(),
+    }
 }
 
 pub fn provides_completions(path: &Path) -> bool {
