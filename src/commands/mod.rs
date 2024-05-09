@@ -1,17 +1,19 @@
+pub mod internal;
+pub mod file;
+pub mod directory;
+pub mod toplevel;
+
 use std::os::unix::fs::PermissionsExt;
 
 use crate::config::Config;
-use crate::commands::external::ExternalCommand;
+use crate::commands::file::FileCommand;
+use crate::commands::directory::DirectoryCommand;
 use crate::commands::toplevel::TopLevelCommand;
 use crate::commands::internal::help::internal_help;
 use crate::commands::internal::commands::internal_commands;
 use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
 use crate::error::Error;
-
-pub mod internal;
-pub mod external;
-pub mod toplevel;
 
 pub trait Command {
     fn name(&self) -> &str;
@@ -67,7 +69,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
 
         if args.is_empty() {
             if path.is_dir() {
-                return Ok(Box::new(ExternalCommand {
+                return Ok(Box::new(DirectoryCommand {
                     names,
                     path,
                     args,
@@ -79,7 +81,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
                 return Err(Error::NonExecutable(head.to_owned()));
             }
 
-            return Ok(Box::new(ExternalCommand {
+            return Ok(Box::new(FileCommand {
                 names,
                 path,
                 args,
@@ -95,7 +97,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
             return Err(Error::NonExecutable(head.to_owned()));
         }
 
-        return Ok(Box::new(ExternalCommand {
+        return Ok(Box::new(FileCommand {
             names,
             path,
             args,
