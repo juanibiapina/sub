@@ -3,44 +3,43 @@
 load test_helper
 
 @test "commands: lists commands alphabetically" {
-  fixture "project"
+  fixture "commands"
 
   run main commands
 
   assert_success
-  assert_output "commands
-echo
-env
-error
+  assert_output "a.sh
+b
+c.other
+commands
 help
-nested
-no-doc"
+nested"
 }
 
 @test "commands: filter commands by extension" {
-  fixture "extensions"
+  fixture "commands"
 
   run main commands --extension=sh
 
   assert_success
-  assert_output "example1.sh"
+  assert_output "a.sh"
 }
 
 @test "commands: lists nested commands" {
-  fixture "project"
+  fixture "commands"
 
   run main commands nested
 
   assert_success
-  assert_output "double
-echo"
+  assert_output "d
+double"
 }
 
 @test "commands: lists nested subcommands" {
-  fixture "project"
+  fixture "commands"
 
   run main commands nested double
 
   assert_success
-  assert_output "echo"
+  assert_output "e"
 }
