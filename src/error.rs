@@ -7,4 +7,5 @@ pub enum Error {
     NonExecutable(String),
     SubCommandInterrupted,
     UnknownSubCommand(String),
+    InvalidUsageString,
 }

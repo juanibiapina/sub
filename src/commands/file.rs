@@ -15,16 +15,16 @@ pub struct FileCommand<'a> {
 }
 
 impl<'a> FileCommand<'a> {
-    pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Self {
-        let usage = parser::extract_usage(&path);
+    pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Result<Self> {
+        let usage = parser::extract_usage(&path)?;
 
-        return Self {
+        return Ok(Self {
             names,
             path,
             usage,
             args,
             config,
-        };
+        });
     }
 }
 

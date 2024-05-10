@@ -7,6 +7,8 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+use crate::error::{Error, Result};
+
 #[derive(Debug, PartialEq)]
 pub enum Usage {
     CmdToken,
@@ -71,22 +73,27 @@ pub struct Docs {
     pub help: String,
 }
 
-pub fn extract_usage(path: &Path) -> Option<Usage> {
+pub fn extract_usage(path: &Path) -> Result<Option<Usage>> {
     lazy_static! {
-        static ref USAGE_RE: Regex = Regex::new(r"^# (Usage: .*)$").unwrap();
+        static ref USAGELINE_RE: Regex = Regex::new(r"^# Usage: (.*)$").unwrap();
     }
 
     let comment_block = extract_initial_comment_block(path);
 
     for line in comment_block.lines() {
-        if let Some(caps) = USAGE_RE.captures(&line) {
+        if let Some(caps) = USAGELINE_RE.captures(&line) {
             if let Some(m) = caps.get(1) {
-                return usage_parser().parse(m.as_str()).ok();
+                match usage_parser().parse(m.as_str()) {
+                    Ok(e) => return Ok(Some(e)),
+                    Err(_) => return Err(Error::InvalidUsageString),
+                }
+            } else {
+                return Err(Error::InvalidUsageString);
             }
         }
     }
 
-    return None;
+    return Ok(None);
 }
 
 pub fn extract_docs(path: &Path) -> Docs {

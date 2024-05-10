@@ -45,6 +45,10 @@ fn main() {
         Err(Error::UnknownSubCommand(name)) => {
             display_unknown_subcommand(&config, &name);
             exit(1);
+        },
+        Err(Error::InvalidUsageString) => {
+            println!("Invalid usage string");
+            exit(1);
         }
     };
 
@@ -55,6 +59,10 @@ fn main() {
         Err(Error::NonExecutable(_)) => exit(1),
         Err(Error::UnknownSubCommand(name)) => {
             display_unknown_subcommand(&config, &name);
+            exit(1);
+        },
+        Err(Error::InvalidUsageString) => {
+            println!("Invalid usage string");
             exit(1);
         }
     }
