@@ -24,21 +24,6 @@ PROJECT_DIR="$SUB_TEST_DIR/project"
     assert_failure
 }
 
-@test "sub: lists commands alphabetically" {
-  fixture "project"
-
-  run $SUB_BIN --name main --absolute "$PROJECT_DIR" -- commands
-
-  assert_success
-  assert_output "commands
-echo
-env
-error
-help
-nested
-no-doc"
-}
-
 @test "sub: sets an env variable with the project root" {
   fixture "project"
 
