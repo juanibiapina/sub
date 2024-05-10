@@ -3,7 +3,7 @@
 load test_helper
 
 @test "help: without arguments, displays help for top level command" {
-  fixture "project"
+  fixture "commands"
 
   run main help
 
@@ -17,13 +17,12 @@ Description of the top level command.
 Extended documentation.
 
 Available subcommands:
+    a.sh        
+    b           
+    c.other     
     commands    List available commands
-    echo        Echo arguments
-    env         Print the value of an environment variable
-    error       Return with error 4
     help        Display help for a sub command
-    nested      Run a nested command
-    no-doc      
+    nested      
 
 Use 'main help <command>' for information on a specific command."
 }
