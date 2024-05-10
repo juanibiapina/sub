@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use std::process;
 
 use crate::config::Config;
-use crate::parser::{self, Usage};
+use crate::usage::{self, Usage};
+use crate::parser;
 use crate::error::{Error, Result};
 use crate::commands::Command;
 
@@ -16,7 +17,7 @@ pub struct FileCommand<'a> {
 
 impl<'a> FileCommand<'a> {
     pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Result<Self> {
-        let usage = parser::extract_usage(&path)?;
+        let usage = usage::extract_usage(&path)?;
 
         return Ok(Self {
             names,
