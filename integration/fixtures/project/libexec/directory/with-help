@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+#
+# Summary: Help 2
+#
+# Usage: {cmd}
+#
+# This is a complete test script with documentation.
+#
+# The help section can span multiple lines.
+
+set -e
+
+echo "$@"
