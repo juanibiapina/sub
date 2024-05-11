@@ -46,8 +46,8 @@ fn main() {
             display_unknown_subcommand(&config, &name);
             exit(1);
         },
-        Err(Error::InvalidUsageString) => {
-            println!("Invalid usage string");
+        Err(Error::InvalidUsageString(errors)) => {
+            display_invalid_usage_string(&config, &errors);
             exit(1);
         }
     };
@@ -61,8 +61,8 @@ fn main() {
             display_unknown_subcommand(&config, &name);
             exit(1);
         },
-        Err(Error::InvalidUsageString) => {
-            println!("Invalid usage string");
+        Err(Error::InvalidUsageString(errors)) => {
+            display_invalid_usage_string(&config, &errors);
             exit(1);
         }
     }
@@ -70,6 +70,13 @@ fn main() {
 
 pub fn display_unknown_subcommand(config: &Config, name: &str) {
     println!("{}: no such sub command '{}'", config.name, name);
+}
+
+fn display_invalid_usage_string(config: &Config, errors: &[chumsky::prelude::Simple<char>]) {
+    println!("{}: invalid usage string", config.name);
+    for error in errors {
+        println!("  {}", error);
+    }
 }
 
 struct Args {

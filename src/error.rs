@@ -1,5 +1,7 @@
 use std::result;
 
+use chumsky::prelude::Simple;
+
 pub type Result<T> = result::Result<T, Error>;
 
 pub enum Error {
@@ -7,5 +9,5 @@ pub enum Error {
     NonExecutable(String),
     SubCommandInterrupted,
     UnknownSubCommand(String),
-    InvalidUsageString,
+    InvalidUsageString(Vec<Simple<char>>),
 }

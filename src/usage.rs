@@ -49,7 +49,7 @@ pub fn extract_usage(path: &Path) -> Result<Option<Usage>> {
         if line.starts_with("# Usage:") {
             match usage_parser().parse(line) {
                 Ok(e) => return Ok(Some(e)),
-                Err(_) => return Err(Error::InvalidUsageString),
+                Err(e) => return Err(Error::InvalidUsageString(e)),
             }
         }
     }
