@@ -3,7 +3,7 @@
 load test_helper
 
 @test "completions: without arguments, lists commands" {
-  fixture "project"
+  fixture "completions"
 
   run main completions
 
@@ -12,7 +12,7 @@ load test_helper
 }
 
 @test "completions: fails gracefully when command is not found" {
-  fixture "project"
+  fixture "completions"
 
   run main completions not-found
 
@@ -21,9 +21,9 @@ load test_helper
 }
 
 @test "completions: invokes command completions" {
-  fixture "project"
+  fixture "completions"
 
-  run main completions echo
+  run main completions with-completions
 
   assert_success
   assert_output "comp1
@@ -31,38 +31,38 @@ comp2"
 }
 
 @test "completions: lists nothing if command provides no completions" {
-  fixture "project"
+  fixture "completions"
 
-  run main completions error
+  run main completions no-completions
 
   assert_success
   assert_output ""
 }
 
-@test "completions: displays nested commands" {
-  fixture "project"
+@test "completions: displays for directory commands" {
+  fixture "completions"
 
-  run main completions nested
+  run main completions directory
 
   assert_success
-  assert_output "$(main commands nested)"
+  assert_output "$(main commands directory)"
 }
 
-@test "completions: displays double nested commands" {
-  fixture "project"
+@test "completions: displays double nested directory commands" {
+  fixture "completions"
 
-  run main completions nested double
+  run main completions directory double
 
   assert_success
-  assert_output "$(main commands nested double)"
+  assert_output "$(main commands directory double)"
 }
 
 @test "completions: displays double nested subcommands" {
-  fixture "project"
+  fixture "completions"
 
-  run main completions nested double echo
+  run main completions directory double with-completions
 
   assert_success
-  assert_output "compn1
-compn2"
+  assert_output "comp11
+comp21"
 }
