@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Summary: Print the value of an environment variable
-# Usage: {cmd}
 
 set -e
 
