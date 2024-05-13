@@ -117,8 +117,8 @@ fn init_cli() -> Command {
         )
         .arg(
             Arg::new("commands")
+                .last(true)
                 .allow_hyphen_values(true)
-                .trailing_var_arg(true)
                 .num_args(..),
         )
 }
