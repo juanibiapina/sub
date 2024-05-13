@@ -116,10 +116,7 @@ fn init_cli() -> Command {
                 .required(true),
         )
         .arg(
-            Arg::new("cliargs")
-                .last(true)
-                .allow_hyphen_values(true)
-                .num_args(..),
+            Arg::new("cliargs").raw(true),
         )
 }
 
