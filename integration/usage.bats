@@ -11,6 +11,15 @@ load test_helper
   assert_output "Usage: main no-doc"
 }
 
+@test "usage: when command has no Usage docstring, accepts any arguments" {
+  fixture "project"
+
+  run main no-doc arg1 arg2 -a --long other
+
+  assert_success
+  assert_output "arg1 arg2 -a --long other"
+}
+
 @test "usage: when command has valid usage docstring, print it" {
   fixture "project"
 
