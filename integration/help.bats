@@ -22,9 +22,7 @@ Available subcommands:
     c.other     
     commands    List available commands
     help        Display help for a sub command
-    nested      
-
-Use 'main help <command>' for information on a specific command."
+    nested      "
 }
 
 @test "help: displays usage for a non documented command" {
@@ -87,9 +85,7 @@ Extended documentation.
 
 Available subcommands:
     double       Run a double nested command
-    with-help    Help 2
-
-Use 'main help directory <command>' for information on a specific command."
+    with-help    Help 2"
 }
 
 @test "help: displays help for a nested subcommand" {
@@ -122,9 +118,7 @@ Documentation for this double nested group.
 Extended documentation.
 
 Available subcommands:
-    with-help    Help 3
-
-Use 'main help directory double <command>' for information on a specific command."
+    with-help    Help 3"
 }
 
 @test "help: displays help for a double nested sub command" {

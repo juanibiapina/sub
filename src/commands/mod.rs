@@ -23,6 +23,47 @@ pub trait Command {
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>>;
     fn completions(&self) -> Result<i32>;
     fn invoke(&self) -> Result<i32>;
+
+    fn help(&self) -> String {
+        let mut help = String::new();
+
+        let usage = self.usage();
+        if !usage.is_empty() {
+            help.push_str(&usage);
+            help.push_str("\n\n");
+        }
+
+        let summary = self.summary();
+        if !summary.is_empty() {
+            help.push_str(&summary);
+            help.push_str("\n\n");
+        }
+
+        let description = self.description();
+        if !description.is_empty() {
+            help.push_str(&description);
+        }
+
+        let subcommands = self.subcommands();
+        if !subcommands.is_empty() {
+            help.push_str("\n\nAvailable subcommands:\n");
+
+            let max_width = subcommands
+                .iter()
+                .map(|subcommand| subcommand.name())
+                .map(|name| name.len())
+                .max()
+                .unwrap();
+
+            let width = max_width + 4;
+
+            for subcommand in subcommands {
+                help.push_str(&format!("    {:width$}{}\n", subcommand.name(), subcommand.summary(), width = width));
+            }
+        }
+
+        help
+    }
 }
 
 pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
