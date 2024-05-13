@@ -8,7 +8,7 @@ load test_helper
   run main nested
 
   assert_success
-  assert_output "$(main help nested)"
+  assert_output "$(main --help nested)"
 }
 
 @test "nested: with a non existent subcommand, displays error message" {
@@ -35,5 +35,5 @@ load test_helper
   run main nested double
 
   assert_success
-  assert_output "$(main help nested double)"
+  assert_output "$(main --help nested double)"
 }

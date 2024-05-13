@@ -39,6 +39,8 @@ fn main() {
 
     let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
+        .arg(Arg::new("help").long("help").num_args(0).help("Print help"))
+        .group(ArgGroup::new("help_group").args(["usage", "help"]).multiple(false).required(false))
         .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
 
     let args = match user_cli_command.try_get_matches_from(sub_cli_args.cliargs) {
@@ -58,6 +60,11 @@ fn main() {
 
     if args.get_one::<bool>("usage").cloned().unwrap_or(false) {
         println!("{}", subcommand.usage());
+        exit(0);
+    }
+
+    if args.get_one::<bool>("help").cloned().unwrap_or(false) {
+        println!("{}", subcommand.help());
         exit(0);
     }
 

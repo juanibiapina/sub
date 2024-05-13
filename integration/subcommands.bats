@@ -8,7 +8,7 @@ load test_helper
   run main
 
   assert_success
-  assert_output "$(main help)"
+  assert_output "$(main --help)"
 }
 
 @test "subcommands: ignores hidden files" {

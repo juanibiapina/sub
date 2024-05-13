@@ -2,6 +2,17 @@
 
 load test_helper
 
+@test "usage: conflicts with help" {
+  fixture "project"
+
+  run main --usage --help
+
+  assert_failure
+  assert_output "error: the argument '--usage' cannot be used with '--help'
+
+Usage: main --usage [commands_with_args]..."
+}
+
 @test "usage: when command has no Usage docstring prints default usage" {
   fixture "project"
 

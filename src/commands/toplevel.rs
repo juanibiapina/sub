@@ -5,7 +5,6 @@ use crate::config::Config;
 use crate::error::Result;
 use crate::parser;
 use crate::commands::Command;
-use crate::commands::internal::help::internal_help;
 use crate::commands::internal::commands::internal_commands;
 use crate::commands::external_subcommand;
 
@@ -61,7 +60,6 @@ impl<'a> Command for TopLevelCommand<'a> {
             }
         }
 
-        subcommands.push(Box::new(internal_help(self.config, Vec::new())));
         subcommands.push(Box::new(internal_commands(self.config, Vec::new())));
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
@@ -75,7 +73,8 @@ impl<'a> Command for TopLevelCommand<'a> {
     }
 
     fn invoke(&self) -> Result<i32> {
-        let help_command = internal_help(self.config, Vec::new());
-        help_command.invoke()
+        println!("{}", self.help());
+
+        Ok(0)
     }
 }

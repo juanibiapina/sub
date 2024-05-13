@@ -6,7 +6,6 @@ use crate::parser;
 use crate::error::{Error, Result};
 use crate::commands::Command;
 use crate::commands::internal::commands::internal_commands;
-use crate::commands::internal::help::internal_help;
 use crate::commands::external_subcommand;
 
 pub struct DirectoryCommand<'a> {
@@ -86,7 +85,8 @@ impl<'a> Command for DirectoryCommand<'a> {
             return Err(Error::UnknownSubCommand(self.names.last().unwrap().to_owned()));
         }
 
-        let help_command = internal_help(self.config, self.names.clone());
-        help_command.invoke()
+        println!("{}", self.help());
+
+        Ok(0)
     }
 }

@@ -12,7 +12,6 @@ load test_helper
 b
 c.other
 commands
-help
 nested"
 }
 

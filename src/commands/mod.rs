@@ -9,7 +9,6 @@ use crate::config::Config;
 use crate::commands::file::FileCommand;
 use crate::commands::directory::DirectoryCommand;
 use crate::commands::toplevel::TopLevelCommand;
-use crate::commands::internal::help::internal_help;
 use crate::commands::internal::commands::internal_commands;
 use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
@@ -78,7 +77,6 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
     let name = &cliargs[0];
 
     match name.as_ref() {
-        "help" => Ok(Box::new(internal_help(config, cliargs.split_off(1)))),
         "commands" => Ok(Box::new(internal_commands(config, cliargs.split_off(1)))),
         "completions" => Ok(Box::new(internal_completions(config, cliargs.split_off(1)))),
         _ => {

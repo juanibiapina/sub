@@ -2,10 +2,10 @@
 
 load test_helper
 
-@test "help: without arguments, displays help for top level command" {
+@test "help: displays help for top level command" {
   fixture "commands"
 
-  run main help
+  run main --help
 
   assert_success
   assert_output "Usage: main [<subcommands>] [<args>]
@@ -21,14 +21,13 @@ Available subcommands:
     b           
     c.other     
     commands    List available commands
-    help        Display help for a sub command
     nested      "
 }
 
 @test "help: displays usage for a non documented command" {
   fixture "project"
 
-  run main help no-doc
+  run main --help no-doc
 
   assert_success
   assert_output "Usage: main no-doc"
@@ -37,7 +36,7 @@ Available subcommands:
 @test "help: displays help for a subcommand" {
   fixture "project"
 
-  run main help with-help
+  run main --help with-help
 
   assert_success
   assert_output "Usage: main with-help
@@ -52,7 +51,7 @@ The help section can span multiple lines."
 @test "help: displays summary for subcommand if help is not available" {
   fixture "project"
 
-  run main help only-summary
+  run main --help only-summary
 
   assert_success
   assert_output "Usage: main only-summary
@@ -63,7 +62,7 @@ Return with error 4"
 @test "help: fails gracefully when requested command doesn't exist" {
   fixture "project"
 
-  run main help not-found
+  run main --help not-found
 
   assert_failure
   assert_output "main: no such sub command 'not-found'"
@@ -72,7 +71,7 @@ Return with error 4"
 @test "help: displays help for a directory command" {
   fixture "project"
 
-  run main help directory
+  run main --help directory
 
   assert_success
   assert_output "Usage: main directory [<subcommands>] [<args>]
@@ -91,7 +90,7 @@ Available subcommands:
 @test "help: displays help for a nested subcommand" {
   fixture "project"
 
-  run main help directory with-help
+  run main --help directory with-help
 
   assert_success
   assert_output "Usage: main directory with-help
@@ -106,7 +105,7 @@ The help section can span multiple lines."
 @test "help: displays help for a double nested directory command" {
   fixture "project"
 
-  run main help directory double
+  run main --help directory double
 
   assert_success
   assert_output "Usage: main directory double [<subcommands>] [<args>]
@@ -124,7 +123,7 @@ Available subcommands:
 @test "help: displays help for a double nested sub command" {
   fixture "project"
 
-  run main help directory double with-help
+  run main --help directory double with-help
 
   assert_success
   assert_output "Usage: main directory double with-help
