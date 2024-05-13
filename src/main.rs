@@ -37,7 +37,7 @@ fn main() {
         cache_directory,
     };
 
-    let subcommand = match subcommand(&config, args.commands.clone()) {
+    let subcommand = match subcommand(&config, args.cliargs.clone()) {
         Ok(subcommand) => subcommand,
         Err(error) => handle_error(&config, error),
     };
@@ -62,7 +62,7 @@ fn display_invalid_usage_string(config: &Config, errors: &[chumsky::prelude::Sim
 struct Args {
     name: String,
     root: PathBuf,
-    commands: Vec<String>,
+    cliargs: Vec<String>,
 }
 
 fn handle_error(config: &Config, error: Error) -> ! {
@@ -116,7 +116,7 @@ fn init_cli() -> Command {
                 .required(true),
         )
         .arg(
-            Arg::new("commands")
+            Arg::new("cliargs")
                 .last(true)
                 .allow_hyphen_values(true)
                 .num_args(..),
@@ -138,8 +138,8 @@ fn parse_cli_args() -> Args {
             .expect("`name` is mandatory")
             .clone(),
 
-        commands: args
-            .get_many("commands")
+        cliargs: args
+            .get_many("cliargs")
             .map(|cmds| cmds.cloned().collect::<Vec<_>>())
             .unwrap_or_default(),
 
