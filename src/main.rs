@@ -7,8 +7,8 @@ use clap::{value_parser, Arg, ArgGroup, Command};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-use sub::config::Config;
 use sub::commands::subcommand;
+use sub::config::Config;
 use sub::error::Error;
 
 fn main() {
@@ -39,32 +39,12 @@ fn main() {
 
     let subcommand = match subcommand(&config, args.commands.clone()) {
         Ok(subcommand) => subcommand,
-        Err(Error::NoCompletions) => exit(1),
-        Err(Error::SubCommandInterrupted) => exit(1),
-        Err(Error::NonExecutable(_)) => exit(1),
-        Err(Error::UnknownSubCommand(name)) => {
-            display_unknown_subcommand(&config, &name);
-            exit(1);
-        },
-        Err(Error::InvalidUsageString(errors)) => {
-            display_invalid_usage_string(&config, &errors);
-            exit(1);
-        }
+        Err(error) => handle_error(&config, error),
     };
 
     match subcommand.invoke() {
         Ok(code) => exit(code),
-        Err(Error::NoCompletions) => exit(1),
-        Err(Error::SubCommandInterrupted) => exit(1),
-        Err(Error::NonExecutable(_)) => exit(1),
-        Err(Error::UnknownSubCommand(name)) => {
-            display_unknown_subcommand(&config, &name);
-            exit(1);
-        },
-        Err(Error::InvalidUsageString(errors)) => {
-            display_invalid_usage_string(&config, &errors);
-            exit(1);
-        }
+        Err(error) => handle_error(&config, error),
     }
 }
 
@@ -83,6 +63,22 @@ struct Args {
     name: String,
     root: PathBuf,
     commands: Vec<String>,
+}
+
+fn handle_error(config: &Config, error: Error) -> ! {
+    match error {
+        Error::NoCompletions => exit(1),
+        Error::SubCommandInterrupted => exit(1),
+        Error::NonExecutable(_) => exit(1),
+        Error::UnknownSubCommand(name) => {
+            display_unknown_subcommand(config, &name);
+            exit(1);
+        }
+        Error::InvalidUsageString(errors) => {
+            display_invalid_usage_string(config, &errors);
+            exit(1);
+        }
+    }
 }
 
 fn init_cli() -> Command {
