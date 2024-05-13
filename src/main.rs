@@ -12,9 +12,9 @@ use sub::config::Config;
 use sub::error::Error;
 
 fn main() {
-    let args = parse_cli_args();
+    let sub_cli_args = parse_sub_cli_args();
 
-    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&args.name) {
+    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&sub_cli_args.name) {
         Ok(dir) => dir,
         Err(e) => {
             println!("Problem determining XDG base directory");
@@ -32,15 +32,34 @@ fn main() {
     };
 
     let config = Config {
-        name: args.name,
-        root: args.root,
+        name: sub_cli_args.name,
+        root: sub_cli_args.root,
         cache_directory,
     };
 
-    let subcommand = match subcommand(&config, args.cliargs.clone()) {
+    let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
+        .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
+        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
+
+    let args = match user_cli_command.try_get_matches_from(sub_cli_args.cliargs) {
+        Ok(args) => args,
+        Err(e) => {
+            e.print().unwrap();
+            exit(1);
+        }
+    };
+
+    let commands_with_args = args.get_many::<String>("commands_with_args").map(|cmds| cmds.cloned().collect::<Vec<_>>()).unwrap_or_default();
+
+    let subcommand = match subcommand(&config, commands_with_args) {
         Ok(subcommand) => subcommand,
         Err(error) => handle_error(&config, error),
     };
+
+    if args.get_one::<bool>("usage").cloned().unwrap_or(false) {
+        println!("{}", subcommand.usage());
+        exit(0);
+    }
 
     match subcommand.invoke() {
         Ok(code) => exit(code),
@@ -59,7 +78,7 @@ fn display_invalid_usage_string(config: &Config, errors: &[chumsky::prelude::Sim
     }
 }
 
-struct Args {
+struct SubCliArgs {
     name: String,
     root: PathBuf,
     cliargs: Vec<String>,
@@ -81,7 +100,7 @@ fn handle_error(config: &Config, error: Error) -> ! {
     }
 }
 
-fn init_cli() -> Command {
+fn init_sub_cli() -> Command {
     Command::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
         .arg(
@@ -122,14 +141,14 @@ fn init_cli() -> Command {
 
 #[test]
 fn verify_cli() {
-    init_cli().debug_assert();
+    init_sub_cli().debug_assert();
 }
 
-fn parse_cli_args() -> Args {
-    let app = init_cli();
-    let args = app.get_matches();
+fn parse_sub_cli_args() -> SubCliArgs {
+    let sub_cli = init_sub_cli();
+    let args = sub_cli.get_matches();
 
-    Args {
+    SubCliArgs {
         name: args
             .get_one::<String>("name")
             .expect("`name` is mandatory")

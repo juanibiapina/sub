@@ -5,7 +5,7 @@ load test_helper
 @test "usage: when command has no Usage docstring prints default usage" {
   fixture "project"
 
-  run main help no-doc
+  run main --usage no-doc
 
   assert_success
   assert_output "Usage: main no-doc"
@@ -23,7 +23,7 @@ load test_helper
 @test "usage: when command has valid usage docstring, print it" {
   fixture "project"
 
-  run main help valid-usage
+  run main --usage valid-usage
 
   assert_success
   assert_output "Usage: main valid-usage"
@@ -32,7 +32,7 @@ load test_helper
 @test "usage: when command has invalid usage docstring, error with message" {
   fixture "project"
 
-  run main help invalid-usage
+  run main --usage invalid-usage
 
   assert_failure
   assert_output "main: invalid usage string

@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 chumsky = "*"
-clap = "4"
+clap = { version = "*", features = ["string"] }
 lazy_static = "*"
 regex = "*"
 xdg = "*"
