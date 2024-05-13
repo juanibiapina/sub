@@ -9,7 +9,7 @@ pub mod completions;
 pub struct InternalCommand<'a> {
     pub name: &'static str,
     pub summary: &'static str,
-    pub help: &'static str,
+    pub description: &'static str,
     pub args: Vec<String>,
     pub config: &'a Config,
     pub func: fn(&Config, Vec<String>) -> Result<i32>,
@@ -28,8 +28,8 @@ impl<'a> Command for InternalCommand<'a> {
         "".to_owned() // TODO
     }
 
-    fn help(&self) -> String {
-        self.help.to_owned()
+    fn description(&self) -> String {
+        self.description.to_owned()
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command>> {

@@ -7,7 +7,7 @@ pub fn internal_help(config: &Config, args: Vec<String>) -> internal::InternalCo
     internal::InternalCommand {
         name: "help",
         summary: "Display help for a sub command",
-        help: "A command is considered documented if it starts with a comment block
+        description: "A command is considered documented if it starts with a comment block
             that has a `Summary:' or `Usage:' section. Usage instructions can
             span multiple lines as long as subsequent lines are indented.
             The remainder of the comment block is displayed as extended
@@ -29,9 +29,9 @@ pub fn internal_help(config: &Config, args: Vec<String>) -> internal::InternalCo
                     println!();
                 }
 
-                let help = subcommand.help();
-                if !help.is_empty() {
-                    println!("{}", help);
+                let description = subcommand.description();
+                if !description.is_empty() {
+                    println!("{}", description);
                 }
 
                 let subcommands = subcommand.subcommands();

@@ -30,7 +30,7 @@ pub fn internal_commands(config: &Config, args: Vec<String>) -> internal::Intern
     internal::InternalCommand {
         name: "commands",
         summary: "List available commands",
-        help: "",
+        description: "",
         args,
         config,
         func: |config: &Config, args: Vec<String>| -> Result<i32> {

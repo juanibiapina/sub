@@ -50,8 +50,8 @@ impl<'a> Command for FileCommand<'a> {
         }
     }
 
-    fn help(&self) -> String {
-        parser::extract_docs(&self.path).help
+    fn description(&self) -> String {
+        parser::extract_docs(&self.path).description
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {

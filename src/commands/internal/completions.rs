@@ -7,7 +7,7 @@ pub fn internal_completions(config: &Config, args: Vec<String>) -> internal::Int
     internal::InternalCommand {
         name: "completions",
         summary: "List completions for a sub command",
-        help: "",
+        description: "",
         args,
         config,
         func: |config: &Config, args: Vec<String>| -> Result<i32> {

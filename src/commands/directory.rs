@@ -41,12 +41,12 @@ impl<'a> Command for DirectoryCommand<'a> {
         vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
     }
 
-    fn help(&self) -> String {
+    fn description(&self) -> String {
         let mut readme_path = self.path.clone();
         readme_path.push("README");
 
         if readme_path.exists() {
-            parser::extract_docs(&readme_path).help
+            parser::extract_docs(&readme_path).description
         } else {
             "".to_owned()
         }

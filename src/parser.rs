@@ -28,13 +28,13 @@ fn extract_initial_comment_block(path: &Path) -> String {
 enum Mode {
     Out,
     Usage,
-    Help,
+    Description,
 }
 
 pub struct Docs {
     pub summary: String,
     pub usage: String,
-    pub help: String,
+    pub description: String,
 }
 
 pub fn extract_docs(path: &Path) -> Docs {
@@ -49,7 +49,7 @@ pub fn extract_docs(path: &Path) -> Docs {
 
     let mut summary = Vec::new();
     let mut usage = Vec::new();
-    let mut help = Vec::new();
+    let mut description = Vec::new();
 
     let mut mode = Mode::Out;
 
@@ -76,8 +76,8 @@ pub fn extract_docs(path: &Path) -> Docs {
 
             if let Some(caps) = EXTENDED_RE.captures(&line) {
                 if let Some(m) = caps.get(1) {
-                    help.push(m.as_str().to_owned());
-                    mode = Mode::Help;
+                    description.push(m.as_str().to_owned());
+                    mode = Mode::Description;
                     continue;
                 }
             }
@@ -98,22 +98,22 @@ pub fn extract_docs(path: &Path) -> Docs {
 
             if let Some(caps) = EXTENDED_RE.captures(&line) {
                 if let Some(m) = caps.get(1) {
-                    help.push(m.as_str().to_owned());
-                    mode = Mode::Help;
+                    description.push(m.as_str().to_owned());
+                    mode = Mode::Description;
                     continue;
                 }
             }
         }
 
-        if mode == Mode::Help {
+        if mode == Mode::Description {
             if line == "#" {
-                help.push("".to_owned());
+                description.push("".to_owned());
                 continue;
             }
 
             if let Some(caps) = EXTENDED_RE.captures(&line) {
                 if let Some(m) = caps.get(1) {
-                    help.push(m.as_str().to_owned());
+                    description.push(m.as_str().to_owned());
                     continue;
                 }
             }
@@ -123,7 +123,7 @@ pub fn extract_docs(path: &Path) -> Docs {
     Docs {
         summary: summary.join("\n"),
         usage: usage.join("\n").trim().to_owned(),
-        help: help.join("\n").trim().to_owned(),
+        description: description.join("\n").trim().to_owned(),
     }
 }
 
