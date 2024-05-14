@@ -2,7 +2,6 @@ use crate::error::Result;
 use crate::config::Config;
 use crate::commands::Command;
 
-pub mod commands;
 pub mod completions;
 
 pub struct InternalCommand<'a> {

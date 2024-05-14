@@ -5,7 +5,6 @@ use crate::config::Config;
 use crate::error::Result;
 use crate::parser;
 use crate::commands::Command;
-use crate::commands::internal::commands::internal_commands;
 use crate::commands::external_subcommand;
 
 pub struct TopLevelCommand<'a> {
@@ -60,16 +59,17 @@ impl<'a> Command for TopLevelCommand<'a> {
             }
         }
 
-        subcommands.push(Box::new(internal_commands(self.config, Vec::new())));
-
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
         subcommands
     }
 
     fn completions(&self) -> Result<i32> {
-        let commands = internal_commands(self.config, Vec::new());
-        commands.invoke()
+        for command in self.subcommands() {
+            println!("{}", command.name());
+        }
+
+        Ok(0)
     }
 
     fn invoke(&self) -> Result<i32> {

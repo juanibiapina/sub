@@ -8,7 +8,7 @@ load test_helper
   run main completions
 
   assert_success
-  assert_output "$(main commands)"
+  assert_output "$(main --commands)"
 }
 
 @test "completions: fails gracefully when command is not found" {
@@ -45,7 +45,7 @@ comp2"
   run main completions directory
 
   assert_success
-  assert_output "$(main commands directory)"
+  assert_output "$(main --commands directory)"
 }
 
 @test "completions: displays double nested directory commands" {
@@ -54,7 +54,7 @@ comp2"
   run main completions directory double
 
   assert_success
-  assert_output "$(main commands directory double)"
+  assert_output "$(main --commands directory double)"
 }
 
 @test "completions: displays double nested subcommands" {

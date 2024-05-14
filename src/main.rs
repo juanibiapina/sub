@@ -36,6 +36,19 @@ fn main() {
         UserCliMode::Help => {
             println!("{}", subcommand.help());
         }
+        UserCliMode::Commands(extension) => {
+            for subcommand in subcommand.subcommands() {
+                if let Some(extension) = &extension {
+                    if let Some(subcommand_extension) = Path::new(subcommand.name()).extension() {
+                        if subcommand_extension == extension.as_str() {
+                            println!("{}", subcommand.name());
+                        }
+                    }
+                } else {
+                    println!("{}", subcommand.name());
+                }
+            }
+        }
     }
 }
 
@@ -112,6 +125,7 @@ enum UserCliMode {
     Invoke,
     Usage,
     Help,
+    Commands(Option<String>),
 }
 
 struct UserCliArgs {
@@ -123,7 +137,10 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
     let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
         .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
-        .group(ArgGroup::new("help_group").args(["usage", "help"]).multiple(false).required(false))
+        .arg(Arg::new("commands").long("commands").num_args(0).help("Print subcommands"))
+        .arg(Arg::new("extension").long("extension").num_args(1).help("Filter subcommands by extension"))
+        .group(ArgGroup::new("exclusion").args(["commands", "usage", "help"]).multiple(false).required(false))
+        .group(ArgGroup::new("extension_group").args(["extension"]).requires("commands"))
         .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
 
     let args = match user_cli_command.try_get_matches_from(cliargs) {
@@ -139,6 +156,8 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
             UserCliMode::Usage
         } else if args.get_one::<bool>("help").cloned().unwrap_or(false) {
             UserCliMode::Help
+        } else if args.get_one::<bool>("commands").cloned().unwrap_or(false) {
+            UserCliMode::Commands(args.get_one::<String>("extension").cloned())
         } else {
             UserCliMode::Invoke
         },

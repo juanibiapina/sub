@@ -5,7 +5,6 @@ use crate::config::Config;
 use crate::parser;
 use crate::error::{Error, Result};
 use crate::commands::Command;
-use crate::commands::internal::commands::internal_commands;
 use crate::commands::external_subcommand;
 
 pub struct DirectoryCommand<'a> {
@@ -76,8 +75,11 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn completions(&self) -> Result<i32> {
-        let commands = internal_commands(self.config, self.names.clone());
-        commands.invoke()
+        for command in self.subcommands() {
+            println!("{}", command.name());
+        }
+
+        Ok(0)
     }
 
     fn invoke(&self) -> Result<i32> {
