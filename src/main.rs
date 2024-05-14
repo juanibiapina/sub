@@ -39,28 +39,20 @@ fn main() {
     }
 }
 
-pub fn display_unknown_subcommand(config: &Config, name: &str) {
-    println!("{}: no such sub command '{}'", config.name, name);
-}
-
-fn display_invalid_usage_string(config: &Config, errors: &[chumsky::prelude::Simple<char>]) {
-    println!("{}: invalid usage string", config.name);
-    for error in errors {
-        println!("  {}", error);
-    }
-}
-
 fn handle_error(config: &Config, error: Error) -> ! {
     match error {
         Error::NoCompletions => exit(1),
         Error::SubCommandInterrupted => exit(1),
         Error::NonExecutable(_) => exit(1),
         Error::UnknownSubCommand(name) => {
-            display_unknown_subcommand(config, &name);
+            println!("{}: no such sub command '{}'", config.name, name);
             exit(1);
         }
         Error::InvalidUsageString(errors) => {
-            display_invalid_usage_string(config, &errors);
+            println!("{}: invalid usage string", config.name);
+            for error in errors {
+                println!("  {}", error);
+            }
             exit(1);
         }
     }
