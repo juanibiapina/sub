@@ -2,6 +2,15 @@
 
 load test_helper
 
+@test "help: takes short flag" {
+  fixture "commands"
+
+  run main -h
+
+  assert_success
+  assert_output "$(main --help)"
+}
+
 @test "help: displays help for top level command" {
   fixture "commands"
 

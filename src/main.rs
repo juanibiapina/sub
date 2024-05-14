@@ -39,7 +39,7 @@ fn main() {
 
     let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
-        .arg(Arg::new("help").long("help").num_args(0).help("Print help"))
+        .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
         .group(ArgGroup::new("help_group").args(["usage", "help"]).multiple(false).required(false))
         .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
 
