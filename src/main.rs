@@ -14,28 +14,7 @@ use sub::error::Error;
 fn main() {
     let sub_cli_args = parse_sub_cli_args();
 
-    let xdg_dirs = match xdg::BaseDirectories::with_prefix(&sub_cli_args.name) {
-        Ok(dir) => dir,
-        Err(e) => {
-            println!("Problem determining XDG base directory");
-            println!("Original error: {}", e);
-            exit(1);
-        }
-    };
-    let cache_directory = match xdg_dirs.create_cache_directory("cache") {
-        Ok(dir) => dir,
-        Err(e) => {
-            println!("Problem determining XDG cache directory");
-            println!("Original error: {}", e);
-            exit(1);
-        }
-    };
-
-    let config = Config {
-        name: sub_cli_args.name,
-        root: sub_cli_args.root,
-        cache_directory,
-    };
+    let config = Config::new(sub_cli_args.name, sub_cli_args.root);
 
     let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
