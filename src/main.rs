@@ -16,40 +16,26 @@ fn main() {
 
     let config = Config::new(sub_cli_args.name, sub_cli_args.root);
 
-    let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
-        .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
-        .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
-        .group(ArgGroup::new("help_group").args(["usage", "help"]).multiple(false).required(false))
-        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
+    let user_cli_args = parse_user_cli_args(&config, sub_cli_args.cliargs);
 
-    let args = match user_cli_command.try_get_matches_from(sub_cli_args.cliargs) {
-        Ok(args) => args,
-        Err(e) => {
-            e.print().unwrap();
-            exit(1);
-        }
-    };
-
-    let commands_with_args = args.get_many::<String>("commands_with_args").map(|cmds| cmds.cloned().collect::<Vec<_>>()).unwrap_or_default();
-
-    let subcommand = match subcommand(&config, commands_with_args) {
+    let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
         Err(error) => handle_error(&config, error),
     };
 
-    if args.get_one::<bool>("usage").cloned().unwrap_or(false) {
-        println!("{}", subcommand.usage());
-        exit(0);
-    }
-
-    if args.get_one::<bool>("help").cloned().unwrap_or(false) {
-        println!("{}", subcommand.help());
-        exit(0);
-    }
-
-    match subcommand.invoke() {
-        Ok(code) => exit(code),
-        Err(error) => handle_error(&config, error),
+    match user_cli_args.mode {
+        UserCliMode::Invoke => {
+            match subcommand.invoke() {
+                Ok(code) => exit(code),
+                Err(error) => handle_error(&config, error),
+            }
+        }
+        UserCliMode::Usage => {
+            println!("{}", subcommand.usage());
+        }
+        UserCliMode::Help => {
+            println!("{}", subcommand.help());
+        }
     }
 }
 
@@ -62,12 +48,6 @@ fn display_invalid_usage_string(config: &Config, errors: &[chumsky::prelude::Sim
     for error in errors {
         println!("  {}", error);
     }
-}
-
-struct SubCliArgs {
-    name: String,
-    root: PathBuf,
-    cliargs: Vec<String>,
 }
 
 fn handle_error(config: &Config, error: Error) -> ! {
@@ -128,6 +108,50 @@ fn init_sub_cli() -> Command {
 #[test]
 fn verify_cli() {
     init_sub_cli().debug_assert();
+}
+
+struct SubCliArgs {
+    name: String,
+    root: PathBuf,
+    cliargs: Vec<String>,
+}
+
+enum UserCliMode {
+    Invoke,
+    Usage,
+    Help,
+}
+
+struct UserCliArgs {
+    mode: UserCliMode,
+    commands_with_args: Vec<String>,
+}
+
+fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
+    let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
+        .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
+        .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
+        .group(ArgGroup::new("help_group").args(["usage", "help"]).multiple(false).required(false))
+        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
+
+    let args = match user_cli_command.try_get_matches_from(cliargs) {
+        Ok(args) => args,
+        Err(e) => {
+            e.print().unwrap();
+            exit(1);
+        }
+    };
+
+    UserCliArgs {
+        mode: if args.get_one::<bool>("usage").cloned().unwrap_or(false) {
+            UserCliMode::Usage
+        } else if args.get_one::<bool>("help").cloned().unwrap_or(false) {
+            UserCliMode::Help
+        } else {
+            UserCliMode::Invoke
+        },
+        commands_with_args: args.get_many("commands_with_args").map(|cmds| cmds.cloned().collect::<Vec<_>>()).unwrap_or_default(),
+    }
 }
 
 fn parse_sub_cli_args() -> SubCliArgs {
