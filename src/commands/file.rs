@@ -39,7 +39,7 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn summary(&self) -> String {
-        parser::extract_docs(&self.path).summary
+        self.usage.command().get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
     }
 
     fn usage(&self) -> String {
@@ -47,7 +47,7 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn description(&self) -> String {
-        parser::extract_docs(&self.path).description
+        self.usage.command().get_long_about().map(|s| s.ansi().to_string()).unwrap_or_default()
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {

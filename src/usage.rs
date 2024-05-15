@@ -1,5 +1,7 @@
 extern crate regex;
 
+use regex::Regex;
+
 use chumsky::prelude::*;
 use clap::{Command, Arg};
 
@@ -56,12 +58,6 @@ impl Usage {
         }
     }
 
-    fn default(config: &Config, cmd: &str) -> Self {
-        Self {
-            command: config.base_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
-        }
-    }
-
     pub fn generate(&self) -> String {
         self.command.clone().render_usage().ansi().to_string()
     }
@@ -71,19 +67,83 @@ impl Usage {
     }
 }
 
+#[derive(PartialEq)]
+enum Mode {
+    Out,
+    Description,
+}
+
 pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
+    lazy_static! {
+        static ref SUMMARY_RE: Regex = Regex::new(r"^# Summary: (.*)$").unwrap();
+        static ref INDENTED_RE: Regex = Regex::new(r"^# ( .*)$").unwrap();
+        static ref EXTENDED_RE: Regex = Regex::new(r"^# (.*)$").unwrap();
+    }
+
     let comment_block = extract_initial_comment_block(path);
 
+    let mut command = config.base_command(cmd);
+
+    let mut mode = Mode::Out;
+    let mut found_usage = false;
+    let mut description = Vec::new();
+
     for line in comment_block.lines() {
-        if line.starts_with("# Usage:") {
-            match usage_parser().parse(line) {
-                Ok(arguments) => return Ok(Usage::new(config, UsageLang { arguments }, cmd)),
-                Err(e) => return Err(Error::InvalidUsageString(e)),
+        if mode == Mode::Out {
+            if line == "#" {
+                continue;
+            }
+
+            if let Some(caps) = SUMMARY_RE.captures(&line) {
+                if let Some(m) = caps.get(1) {
+                    command = command.about(m.as_str().to_owned());
+                    continue;
+                }
+            }
+
+            if line.starts_with("# Usage:") {
+                match usage_parser().parse(line) {
+                    Ok(arguments) => {
+                        found_usage = true;
+                        // TODO add arguments to command
+                    },
+                    Err(e) => return Err(Error::InvalidUsageString(e)),
+                }
+
+                continue;
+            }
+
+            if let Some(caps) = EXTENDED_RE.captures(&line) {
+                if let Some(m) = caps.get(1) {
+                    description.push(m.as_str().to_owned());
+                    mode = Mode::Description;
+                    continue;
+                }
+            }
+        }
+
+        if mode == Mode::Description {
+            if line == "#" {
+                description.push("".to_owned());
+                continue;
+            }
+
+            if let Some(caps) = EXTENDED_RE.captures(&line) {
+                if let Some(m) = caps.get(1) {
+                    description.push(m.as_str().to_owned());
+                    continue;
+                }
             }
         }
     }
 
-    return Ok(Usage::default(config, cmd));
+    command = command.long_about(description.join("\n"));
+
+    if !found_usage {
+        command = command.arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
+    }
+
+    return Ok(Usage::from_command(command));
 }
 
 fn extract_initial_comment_block(path: &Path) -> String {
