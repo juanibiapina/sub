@@ -8,13 +8,13 @@ use std::path::{Path, PathBuf};
 use std::process::exit;
 
 use sub::commands::subcommand;
-use sub::config::Config;
+use sub::config::{Color, Config};
 use sub::error::Error;
 
 fn main() {
     let sub_cli_args = parse_sub_cli_args();
 
-    let config = Config::new(sub_cli_args.name, sub_cli_args.root);
+    let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color);
 
     let user_cli_args = parse_user_cli_args(&config, sub_cli_args.cliargs);
 
@@ -85,6 +85,15 @@ fn init_sub_cli() -> Command {
     Command::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
         .arg(
+            Arg::new("color")
+                .long("color")
+                .value_name("WHEN")
+                .value_parser(["auto", "always", "never" ])
+                .default_value("auto")
+                .num_args(1)
+                .help("Enable colored output for help messages"),
+        )
+        .arg(
             Arg::new("name")
                 .long("name")
                 .required(true)
@@ -127,6 +136,7 @@ fn verify_cli() {
 
 struct SubCliArgs {
     name: String,
+    color: Color,
     root: PathBuf,
     cliargs: Vec<String>,
 }
@@ -146,7 +156,7 @@ struct UserCliArgs {
 }
 
 fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
-    let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
+    let user_cli_command = config.clap_command(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
         .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
         .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
@@ -192,6 +202,15 @@ fn parse_sub_cli_args() -> SubCliArgs {
             .get_one::<String>("name")
             .expect("`name` is mandatory")
             .clone(),
+
+        color: match args.get_one::<String>("color")
+            .expect("`color` is mandatory")
+            .clone().as_ref() {
+            "auto" => Color::Auto,
+            "always" => Color::Always,
+            "never" => Color::Never,
+            _ => unreachable!(),
+        },
 
         cliargs: args
             .get_many("cliargs")

@@ -17,7 +17,11 @@ pub struct FileCommand<'a> {
 
 impl<'a> FileCommand<'a> {
     pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Result<Self> {
-        let usage = usage::extract_usage(&path)?.unwrap_or(Usage::default());
+        let mut cmd = vec![config.name.to_owned()];
+        cmd.extend(names.iter().map(|s| s.to_owned()));
+        let cmd = cmd.join(" ");
+
+        let usage = usage::extract_usage(config, &path, &cmd)?;
 
         return Ok(Self {
             names,
@@ -39,12 +43,7 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn usage(&self) -> String {
-        let mut cmd = vec![self.config.name.to_owned()];
-        cmd.extend(self.names.iter().map(|s| s.to_owned()));
-
-        let cmd = cmd.join(" ");
-
-        self.usage.generate(&cmd)
+        self.usage.generate().to_string()
     }
 
     fn description(&self) -> String {
