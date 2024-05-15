@@ -17,7 +17,7 @@ load test_helper
   run main --help
 
   assert_success
-  assert_output "Usage: main [<subcommands>] [<args>]
+  assert_output "Usage: main [OPTIONS] [commands_with_args]...
 
 Top level command summary
 

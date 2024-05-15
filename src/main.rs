@@ -16,9 +16,10 @@ fn main() {
 
     let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color);
 
-    let user_cli_args = parse_user_cli_args(&config, sub_cli_args.cliargs);
+    let user_cli_command = init_user_cli(&config);
+    let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
 
-    let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
+    let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone(), user_cli_command) {
         Ok(subcommand) => subcommand,
         Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
     };
@@ -155,8 +156,8 @@ struct UserCliArgs {
     commands_with_args: Vec<String>,
 }
 
-fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
-    let user_cli_command = config.clap_command(&config.name).no_binary_name(true).disable_help_flag(true)
+fn init_user_cli(config: &Config) -> Command {
+    config.clap_command(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
         .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
         .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
@@ -167,9 +168,11 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
 
         .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help"]).multiple(false).required(false))
 
-        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
+        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..))
+}
 
-    let args = match user_cli_command.try_get_matches_from(cliargs) {
+fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
+    let args = match cmd.clone().try_get_matches_from(cliargs) {
         Ok(args) => args,
         Err(e) => {
             e.print().unwrap();
@@ -203,37 +206,37 @@ fn parse_sub_cli_args() -> SubCliArgs {
             .expect("`name` is mandatory")
             .clone(),
 
-        color: match args.get_one::<String>("color")
-            .expect("`color` is mandatory")
-            .clone().as_ref() {
-            "auto" => Color::Auto,
-            "always" => Color::Always,
-            "never" => Color::Never,
-            _ => unreachable!(),
-        },
+            color: match args.get_one::<String>("color")
+                .expect("`color` is mandatory")
+                .clone().as_ref() {
+                    "auto" => Color::Auto,
+                    "always" => Color::Always,
+                    "never" => Color::Never,
+                    _ => unreachable!(),
+                },
 
-        cliargs: args
-            .get_many("cliargs")
-            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
-            .unwrap_or_default(),
+                cliargs: args
+                    .get_many("cliargs")
+                    .map(|cmds| cmds.cloned().collect::<Vec<_>>())
+                    .unwrap_or_default(),
 
-        root: match args.get_one::<PathBuf>("absolute") {
-            Some(path) => path.clone(),
-            None => {
-                let mut path = args
-                    .get_one::<PathBuf>("bin")
-                    .expect("Either `bin` or `absolute` is required")
-                    .canonicalize()
-                    .expect("Invalid `bin` path")
-                    .clone();
-                path.pop(); // remove bin name
-                if let Some(relative) = args.get_one::<PathBuf>("relative") {
-                    path.push(relative)
-                };
-                path.canonicalize()
-                    .expect("Invalid `bin` or `relative` arguments")
-            }
-        },
+                    root: match args.get_one::<PathBuf>("absolute") {
+                        Some(path) => path.clone(),
+                        None => {
+                            let mut path = args
+                                .get_one::<PathBuf>("bin")
+                                .expect("Either `bin` or `absolute` is required")
+                                .canonicalize()
+                                .expect("Invalid `bin` path")
+                                .clone();
+                            path.pop(); // remove bin name
+                            if let Some(relative) = args.get_one::<PathBuf>("relative") {
+                                path.push(relative)
+                            };
+                            path.canonicalize()
+                                .expect("Invalid `bin` or `relative` arguments")
+                        }
+                    },
     }
 }
 

@@ -4,6 +4,8 @@ pub mod toplevel;
 
 use std::os::unix::fs::PermissionsExt;
 
+use clap;
+
 use crate::config::Config;
 use crate::commands::file::FileCommand;
 use crate::commands::directory::DirectoryCommand;
@@ -62,9 +64,9 @@ pub trait Command {
     }
 }
 
-pub fn subcommand(config: &Config, cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
+pub fn subcommand(config: &Config, cliargs: Vec<String>, user_cli_command: clap::Command) -> Result<Box<dyn Command + '_>> {
     if cliargs.is_empty() {
-        return Ok(Box::new(TopLevelCommand::new(config.name.to_owned(), config.libexec_path(), config)?));
+        return Ok(Box::new(TopLevelCommand::new(config, user_cli_command)?));
     }
 
     external_subcommand(config, cliargs)

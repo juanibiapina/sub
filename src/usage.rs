@@ -3,7 +3,6 @@ extern crate regex;
 use chumsky::prelude::*;
 use clap::{Command, Arg};
 
-use std::fmt::Display;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
@@ -41,21 +40,24 @@ mod tests {
 }
 
 pub struct Usage {
-    cmd: String,
     command: Command,
 }
 
 impl Usage {
+    pub fn from_command(command: Command) -> Self {
+        Self {
+            command,
+        }
+    }
+
     fn new(config: &Config, usage_lang: UsageLang, cmd: &str) -> Self {
         Self {
-            cmd: cmd.to_string(),
             command: config.clap_command(cmd),
         }
     }
 
     fn default(config: &Config, cmd: &str) -> Self {
         Self {
-            cmd: cmd.to_string(),
             command: config.clap_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
         }
     }

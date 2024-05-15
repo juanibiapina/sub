@@ -4,20 +4,25 @@ use std::path::PathBuf;
 use crate::config::Config;
 use crate::error::Result;
 use crate::parser;
+use crate::usage::Usage;
 use crate::commands::Command;
 use crate::commands::external_subcommand;
 
 pub struct TopLevelCommand<'a> {
     name: String,
     path: PathBuf,
+    usage: Usage,
     config: &'a Config,
 }
 
 impl<'a> TopLevelCommand<'a> {
-    pub fn new(name: String, path: PathBuf, config: &'a Config) -> Result<Self> {
+    pub fn new(config: &'a Config, user_cli_command: clap::Command) -> Result<Self> {
+        let usage = Usage::from_command(user_cli_command);
+
         Ok(Self {
-            name,
-            path,
+            name: config.name.to_owned(),
+            path: config.libexec_path(),
+            usage,
             config,
         })
     }
@@ -40,7 +45,7 @@ impl<'a> Command for TopLevelCommand<'a> {
     }
 
     fn usage(&self) -> String {
-        format!("Usage: {} [<subcommands>] [<args>]", self.name)
+        self.usage.generate().to_string()
     }
 
     fn description(&self) -> String {
