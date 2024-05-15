@@ -47,7 +47,11 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn description(&self) -> String {
-        self.usage.command().get_long_about().map(|s| s.ansi().to_string()).unwrap_or_default()
+        self.usage.command().get_after_help().map(|s| s.ansi().to_string()).unwrap_or_default()
+    }
+
+    fn help(&self) -> String {
+        self.usage.command().render_help().ansi().to_string()
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {

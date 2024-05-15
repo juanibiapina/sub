@@ -29,7 +29,7 @@ impl<'a> DirectoryCommand<'a> {
             }
 
             if let Some(description) = docs.description {
-                command = command.long_about(description);
+                command = command.after_help(description);
             }
         }
 
@@ -58,7 +58,54 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn description(&self) -> String {
-        self.usage.command().get_long_about().map(|s| s.ansi().to_string()).unwrap_or_default()
+        self.usage.command().get_after_help().map(|s| s.ansi().to_string()).unwrap_or_default()
+    }
+
+    fn help(&self) -> String {
+        let mut help = String::new();
+
+        let usage = self.usage();
+        if !usage.is_empty() {
+            help.push_str(&usage);
+            help.push_str("\n\n");
+        }
+
+        let summary = self.summary();
+        if !summary.is_empty() {
+            help.push_str(&summary);
+            help.push_str("\n\n");
+        }
+
+        let description = self.description();
+        if !description.is_empty() {
+            help.push_str(&description);
+            help.push_str("\n\n");
+        }
+
+        let subcommands = self.subcommands();
+        if !subcommands.is_empty() {
+            help.push_str("Available subcommands:\n");
+
+            let max_width = subcommands
+                .iter()
+                .map(|subcommand| subcommand.name())
+                .map(|name| name.len())
+                .max()
+                .unwrap();
+
+            let width = max_width + 4;
+
+            for subcommand in subcommands {
+                help.push_str(&format!(
+                    "    {:width$}{}\n",
+                    subcommand.name(),
+                    subcommand.summary(),
+                    width = width
+                ));
+            }
+        }
+
+        help
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {

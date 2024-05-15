@@ -74,7 +74,7 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
     }
 
     if let Some(description) = docs.description {
-        command = command.long_about(description);
+        command = command.after_help(description);
     }
 
     if let Some(line) = docs.usage {

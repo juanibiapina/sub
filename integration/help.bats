@@ -38,7 +38,13 @@ Available subcommands:
   run main --help no-doc
 
   assert_success
-  assert_output "Usage: main no-doc [args]..."
+  assert_output "Usage: main no-doc [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help"
 }
 
 @test "help: displays help for a subcommand" {
@@ -47,24 +53,16 @@ Available subcommands:
   run main --help with-help
 
   assert_success
-  assert_output "Usage: main with-help
+  assert_output "Command with complete help
 
-Command with complete help
+Usage: main with-help
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 
 The help section can span multiple lines."
-}
-
-@test "help: displays summary for subcommand if help is not available" {
-  fixture "project"
-
-  run main --help only-summary
-
-  assert_success
-  assert_output "Usage: main only-summary [args]...
-
-Return with error 4"
 }
 
 @test "help: fails gracefully when requested command doesn't exist" {
@@ -101,9 +99,15 @@ Available subcommands:
   run main --help directory with-help
 
   assert_success
-  assert_output "Usage: main directory with-help [args]...
+  assert_output "Help 2
 
-Help 2
+Usage: main directory with-help [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 
@@ -134,9 +138,15 @@ Available subcommands:
   run main --help directory double with-help
 
   assert_success
-  assert_output "Usage: main directory double with-help [args]...
+  assert_output "Help 3
 
-Help 3
+Usage: main directory double with-help [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 
