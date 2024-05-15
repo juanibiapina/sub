@@ -52,13 +52,13 @@ impl Usage {
 
     fn new(config: &Config, usage_lang: UsageLang, cmd: &str) -> Self {
         Self {
-            command: config.clap_command(cmd),
+            command: config.base_command(cmd),
         }
     }
 
     fn default(config: &Config, cmd: &str) -> Self {
         Self {
-            command: config.clap_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
+            command: config.base_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
         }
     }
 

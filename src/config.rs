@@ -52,7 +52,7 @@ impl Config {
         return path;
     }
 
-    pub fn clap_command(&self, name: &str) -> Command {
+    pub fn base_command(&self, name: &str) -> Command {
         let color_choice = match self.color {
             Color::Auto => ColorChoice::Auto,
             Color::Always => ColorChoice::Always,

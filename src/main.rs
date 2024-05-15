@@ -157,7 +157,7 @@ struct UserCliArgs {
 }
 
 fn init_user_cli(config: &Config) -> Command {
-    config.clap_command(&config.name).no_binary_name(true).disable_help_flag(true)
+    config.base_command(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
         .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
         .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
