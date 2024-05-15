@@ -77,6 +77,11 @@ impl<'a> Command for FileCommand<'a> {
             return Err(Error::UnknownSubCommand(self.names.last().unwrap().to_owned()));
         }
 
+        // validate arguments to subcommand
+        let clap_command = self.usage.command();
+        let _ = clap_command.get_matches_from(&self.args);
+
+        // invoke subcommand
         let mut command = process::Command::new(&self.path);
 
         command.args(&self.args);
