@@ -24,7 +24,13 @@ impl<'a> DirectoryCommand<'a> {
         if readme_path.exists() {
             let docs = parser::extract_docs(&readme_path);
 
-            command = command.about(docs.summary).long_about(docs.description);
+            if let Some(summary) = docs.summary {
+                command = command.about(summary);
+            }
+
+            if let Some(description) = docs.description {
+                command = command.long_about(description);
+            }
         }
 
         let usage = Usage::from_command(command);

@@ -31,8 +31,8 @@ enum Mode {
 }
 
 pub struct Docs {
-    pub summary: String,
-    pub description: String,
+    pub summary: Option<String>,
+    pub description: Option<String>,
 }
 
 pub fn extract_docs(path: &Path) -> Docs {
@@ -44,7 +44,7 @@ pub fn extract_docs(path: &Path) -> Docs {
 
     let comment_block = extract_initial_comment_block(path);
 
-    let mut summary = Vec::new();
+    let mut summary = None;
     let mut description = Vec::new();
 
     let mut mode = Mode::Out;
@@ -57,7 +57,7 @@ pub fn extract_docs(path: &Path) -> Docs {
 
             if let Some(caps) = SUMMARY_RE.captures(&line) {
                 if let Some(m) = caps.get(1) {
-                    summary.push(m.as_str().to_owned());
+                    summary = Some(m.as_str().to_owned());
                     continue;
                 }
             }
@@ -91,8 +91,8 @@ pub fn extract_docs(path: &Path) -> Docs {
     }
 
     Docs {
-        summary: summary.join("\n"),
-        description: description.join("\n").trim().to_owned(),
+        summary,
+        description: if description.is_empty() { None } else { Some(description.join("\n")) },
     }
 }
 
