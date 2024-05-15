@@ -27,20 +27,17 @@ fn extract_initial_comment_block(path: &Path) -> String {
 #[derive(PartialEq)]
 enum Mode {
     Out,
-    Usage,
     Description,
 }
 
 pub struct Docs {
     pub summary: String,
-    pub usage: String,
     pub description: String,
 }
 
 pub fn extract_docs(path: &Path) -> Docs {
     lazy_static! {
         static ref SUMMARY_RE: Regex = Regex::new(r"^# Summary: (.*)$").unwrap();
-        static ref USAGE_RE: Regex = Regex::new(r"^# (Usage: .*)$").unwrap();
         static ref INDENTED_RE: Regex = Regex::new(r"^# ( .*)$").unwrap();
         static ref EXTENDED_RE: Regex = Regex::new(r"^# (.*)$").unwrap();
     }
@@ -48,7 +45,6 @@ pub fn extract_docs(path: &Path) -> Docs {
     let comment_block = extract_initial_comment_block(path);
 
     let mut summary = Vec::new();
-    let mut usage = Vec::new();
     let mut description = Vec::new();
 
     let mut mode = Mode::Out;
@@ -66,34 +62,8 @@ pub fn extract_docs(path: &Path) -> Docs {
                 }
             }
 
-            if let Some(caps) = USAGE_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    usage.push(m.as_str().to_owned());
-                    mode = Mode::Usage;
-                    continue;
-                }
-            }
-
-            if let Some(caps) = EXTENDED_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    description.push(m.as_str().to_owned());
-                    mode = Mode::Description;
-                    continue;
-                }
-            }
-        }
-
-        if mode == Mode::Usage {
-            if line == "#" {
-                usage.push("".to_owned());
+            if line.starts_with("# Usage:") {
                 continue;
-            }
-
-            if let Some(caps) = INDENTED_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    usage.push(m.as_str().to_owned());
-                    continue;
-                }
             }
 
             if let Some(caps) = EXTENDED_RE.captures(&line) {
@@ -122,7 +92,6 @@ pub fn extract_docs(path: &Path) -> Docs {
 
     Docs {
         summary: summary.join("\n"),
-        usage: usage.join("\n").trim().to_owned(),
         description: description.join("\n").trim().to_owned(),
     }
 }
