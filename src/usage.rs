@@ -1,7 +1,7 @@
 extern crate regex;
 
 use chumsky::prelude::*;
-use clap::Command;
+use clap::{Command, Arg};
 
 use std::fmt::Display;
 use std::fs::File;
@@ -12,16 +12,18 @@ use crate::error::{Error, Result};
 use crate::config::Config;
 
 #[derive(Debug, PartialEq)]
-enum UsageLang {
-    CmdToken,
+pub enum Argument {
 }
 
-fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
+#[derive(Debug, PartialEq)]
+struct UsageLang {
+    arguments: Vec<Argument>,
+}
+
+fn usage_parser() -> impl Parser<char, Vec::<Argument>, Error = Simple<char>> {
     let prefix = just("# Usage:").padded();
 
-    let cmd_token = just("{cmd}")
-        .map(|_| UsageLang::CmdToken)
-        .padded();
+    let cmd_token = just("{cmd}").padded().map(|_| Vec::<Argument>::new());
 
     prefix.ignore_then(cmd_token).then_ignore(end())
 }
@@ -34,7 +36,7 @@ mod tests {
     fn parse_cmd_token() {
         let input = "# Usage: {cmd}";
         let result = usage_parser().parse(input).unwrap();
-        assert_eq!(result, UsageLang::CmdToken);
+        assert_eq!(result, Vec::<Argument>::new());
     }
 }
 
@@ -51,12 +53,16 @@ impl Usage {
 
     fn default(config: &Config, cmd: &str) -> Self {
         Self {
-            command: config.clap_command(cmd),
+            command: config.clap_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
         }
     }
 
     pub fn generate(&self) -> impl Display {
         self.command.clone().render_usage().ansi().to_string()
+    }
+
+    pub fn command(&self) -> Command {
+        self.command.clone()
     }
 }
 
@@ -66,7 +72,7 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
     for line in comment_block.lines() {
         if line.starts_with("# Usage:") {
             match usage_parser().parse(line) {
-                Ok(usage_lang) => return Ok(Usage::new(config, usage_lang, cmd)),
+                Ok(arguments) => return Ok(Usage::new(config, UsageLang { arguments }, cmd)),
                 Err(e) => return Err(Error::InvalidUsageString(e)),
             }
         }
