@@ -41,24 +41,40 @@ mod tests {
 }
 
 pub struct Usage {
+    cmd: String,
+    usage_lang: UsageLang,
     command: Command,
 }
 
 impl Usage {
     fn new(config: &Config, usage_lang: UsageLang, cmd: &str) -> Self {
         Self {
+            cmd: cmd.to_string(),
+            usage_lang,
             command: config.clap_command(cmd),
         }
     }
 
     fn default(config: &Config, cmd: &str) -> Self {
         Self {
+            cmd: cmd.to_string(),
+            usage_lang: UsageLang { arguments: Vec::new() },
             command: config.clap_command(cmd).arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true)),
         }
     }
 
     pub fn generate(&self) -> impl Display {
-        self.command.clone().render_usage().ansi().to_string()
+        let mut result = String::new();
+
+        result.push_str("Usage: ");
+        result.push_str(&self.cmd);
+
+        for arg in &self.usage_lang.arguments {
+            result.push_str(" ");
+            result.push_str(&format!("{:?}", arg));
+        }
+
+        result
     }
 
     pub fn command(&self) -> Command {
