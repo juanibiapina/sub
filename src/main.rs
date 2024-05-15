@@ -20,14 +20,14 @@ fn main() {
 
     let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
-        Err(error) => handle_error(&config, error),
+        Err(error) => handle_error(&config, error, user_cli_args.mode),
     };
 
     match user_cli_args.mode {
         UserCliMode::Invoke => {
             match subcommand.invoke() {
                 Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error),
+                Err(error) => handle_error(&config, error, user_cli_args.mode),
             }
         }
         UserCliMode::Usage => {
@@ -49,22 +49,32 @@ fn main() {
                 }
             }
         }
+        UserCliMode::Completions => {
+            match subcommand.completions() {
+                Ok(code) => exit(code),
+                Err(error) => handle_error(&config, error, user_cli_args.mode),
+            }
+        }
     }
 }
 
-fn handle_error(config: &Config, error: Error) -> ! {
+fn handle_error(config: &Config, error: Error, mode: UserCliMode) -> ! {
     match error {
         Error::NoCompletions => exit(1),
         Error::SubCommandInterrupted => exit(1),
         Error::NonExecutable(_) => exit(1),
         Error::UnknownSubCommand(name) => {
-            println!("{}: no such sub command '{}'", config.name, name);
+            if mode != UserCliMode::Completions {
+                println!("{}: no such sub command '{}'", config.name, name);
+            }
             exit(1);
         }
         Error::InvalidUsageString(errors) => {
-            println!("{}: invalid usage string", config.name);
-            for error in errors {
-                println!("  {}", error);
+            if mode != UserCliMode::Completions {
+                println!("{}: invalid usage string", config.name);
+                for error in errors {
+                    println!("  {}", error);
+                }
             }
             exit(1);
         }
@@ -121,11 +131,13 @@ struct SubCliArgs {
     cliargs: Vec<String>,
 }
 
+#[derive(PartialEq)]
 enum UserCliMode {
     Invoke,
     Usage,
     Help,
     Commands(Option<String>),
+    Completions,
 }
 
 struct UserCliArgs {
@@ -137,10 +149,14 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
     let user_cli_command = Command::new(&config.name).no_binary_name(true).disable_help_flag(true)
         .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
         .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
+        .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
+
         .arg(Arg::new("commands").long("commands").num_args(0).help("Print subcommands"))
         .arg(Arg::new("extension").long("extension").num_args(1).help("Filter subcommands by extension"))
-        .group(ArgGroup::new("exclusion").args(["commands", "usage", "help"]).multiple(false).required(false))
         .group(ArgGroup::new("extension_group").args(["extension"]).requires("commands"))
+
+        .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help"]).multiple(false).required(false))
+
         .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
 
     let args = match user_cli_command.try_get_matches_from(cliargs) {
@@ -158,6 +174,8 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
             UserCliMode::Help
         } else if args.get_one::<bool>("commands").cloned().unwrap_or(false) {
             UserCliMode::Commands(args.get_one::<String>("extension").cloned())
+        } else if args.get_one::<bool>("completions").cloned().unwrap_or(false) {
+            UserCliMode::Completions
         } else {
             UserCliMode::Invoke
         },

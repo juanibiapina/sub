@@ -1,4 +1,3 @@
-pub mod internal;
 pub mod file;
 pub mod directory;
 pub mod toplevel;
@@ -9,7 +8,6 @@ use crate::config::Config;
 use crate::commands::file::FileCommand;
 use crate::commands::directory::DirectoryCommand;
 use crate::commands::toplevel::TopLevelCommand;
-use crate::commands::internal::completions::internal_completions;
 use crate::error::Result;
 use crate::error::Error;
 
@@ -64,7 +62,7 @@ pub trait Command {
     }
 }
 
-pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
+pub fn subcommand(config: &Config, cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
     if cliargs.is_empty() {
         return Ok(Box::new(TopLevelCommand {
             name: config.name.to_owned(),
@@ -73,14 +71,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
         }));
     }
 
-    let name = &cliargs[0];
-
-    match name.as_ref() {
-        "completions" => Ok(Box::new(internal_completions(config, cliargs.split_off(1)))),
-        _ => {
-            external_subcommand(config, cliargs)
-        },
-    }
+    external_subcommand(config, cliargs)
 }
 
 pub fn external_subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
