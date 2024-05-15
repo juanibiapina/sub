@@ -19,7 +19,7 @@ fn main() {
     let user_cli_command = config.user_cli_command(&config.name);
     let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
 
-    let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone(), user_cli_command) {
+    let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
         Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
     };

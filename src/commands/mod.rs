@@ -1,15 +1,11 @@
 pub mod file;
 pub mod directory;
-pub mod toplevel;
 
 use std::os::unix::fs::PermissionsExt;
-
-use clap;
 
 use crate::config::Config;
 use crate::commands::file::FileCommand;
 use crate::commands::directory::DirectoryCommand;
-use crate::commands::toplevel::TopLevelCommand;
 use crate::error::Result;
 use crate::error::Error;
 
@@ -64,17 +60,17 @@ pub trait Command {
     }
 }
 
-pub fn subcommand(config: &Config, cliargs: Vec<String>, user_cli_command: clap::Command) -> Result<Box<dyn Command + '_>> {
-    if cliargs.is_empty() {
-        return Ok(Box::new(TopLevelCommand::new(config, user_cli_command)?));
-    }
-
-    external_subcommand(config, cliargs)
-}
-
-pub fn external_subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
+pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
     let mut path = config.libexec_path();
     let mut names = Vec::new();
+
+    if cliargs.is_empty() {
+        if path.is_dir() {
+            return Ok(Box::new(DirectoryCommand::new(&config.name, names, path, config)?));
+        }
+
+        panic!("libexec is a file, not a directory");
+    }
 
     loop {
         let head = cliargs[0].clone();
@@ -95,7 +91,9 @@ pub fn external_subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<
 
         if cliargs.is_empty() {
             if path.is_dir() {
-                return Ok(Box::new(DirectoryCommand::new(names, path, config)?));
+                let mut name_parts = vec![config.name.to_owned()];
+                name_parts.append(&mut names.clone());
+                return Ok(Box::new(DirectoryCommand::new(&name_parts.join(" "), names, path, config)?));
             }
 
             if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {

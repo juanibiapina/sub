@@ -5,19 +5,24 @@ use crate::config::Config;
 use crate::parser;
 use crate::error::{Error, Result};
 use crate::commands::Command;
-use crate::commands::external_subcommand;
+use crate::commands::subcommand;
+use crate::usage::Usage;
 
 pub struct DirectoryCommand<'a> {
     names: Vec<String>,
     path: PathBuf,
+    usage: Usage,
     config: &'a Config,
 }
 
 impl<'a> DirectoryCommand<'a> {
-    pub fn new(names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
+    pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
+        let usage = Usage::from_command(config.user_cli_command(name));
+
         return Ok(Self {
             names,
             path,
+            usage,
             config,
         });
     }
@@ -40,12 +45,7 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn usage(&self) -> String {
-        let mut cmd = vec![self.config.name.to_owned()];
-        cmd.extend(self.names.iter().map(|s| s.to_owned()));
-
-        let cmd = cmd.join(" ");
-
-        vec!["Usage:", &cmd, "[<subcommands>]", "[<args>]"].join(" ")
+        self.usage.generate().to_string()
     }
 
     fn description(&self) -> String {
@@ -72,7 +72,7 @@ impl<'a> Command for DirectoryCommand<'a> {
                 let mut names = self.names.clone();
                 names.push(name);
 
-                if let Ok(subcommand) = external_subcommand(self.config, names) {
+                if let Ok(subcommand) = subcommand(self.config, names) {
                     subcommands.push(subcommand);
                 }
             }
