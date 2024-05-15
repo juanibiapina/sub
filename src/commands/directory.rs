@@ -1,11 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::config::Config;
-use crate::parser;
-use crate::error::{Error, Result};
-use crate::commands::Command;
 use crate::commands::subcommand;
+use crate::commands::Command;
+use crate::config::Config;
+use crate::error::{Error, Result};
+use crate::parser;
 use crate::usage::Usage;
 
 pub struct DirectoryCommand<'a> {
@@ -17,7 +17,17 @@ pub struct DirectoryCommand<'a> {
 
 impl<'a> DirectoryCommand<'a> {
     pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
-        let usage = Usage::from_command(config.user_cli_command(name));
+        let readme_path = path.join("README");
+
+        let mut command = config.user_cli_command(name);
+
+        if readme_path.exists() {
+            let docs = parser::extract_docs(&readme_path);
+
+            command = command.about(docs.summary).long_about(docs.description);
+        }
+
+        let usage = Usage::from_command(command);
 
         return Ok(Self {
             names,
@@ -34,14 +44,7 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn summary(&self) -> String {
-        let mut readme_path = self.path.clone();
-        readme_path.push("README");
-
-        if readme_path.exists() {
-            parser::extract_docs(&readme_path).summary
-        } else {
-            "".to_owned()
-        }
+        self.usage.command().get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
     }
 
     fn usage(&self) -> String {
@@ -49,14 +52,7 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn description(&self) -> String {
-        let mut readme_path = self.path.clone();
-        readme_path.push("README");
-
-        if readme_path.exists() {
-            parser::extract_docs(&readme_path).description
-        } else {
-            "".to_owned()
-        }
+        self.usage.command().get_long_about().map(|s| s.ansi().to_string()).unwrap_or_default()
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
@@ -93,7 +89,9 @@ impl<'a> Command for DirectoryCommand<'a> {
 
     fn invoke(&self) -> Result<i32> {
         if !self.path.exists() {
-            return Err(Error::UnknownSubCommand(self.names.last().unwrap().to_owned()));
+            return Err(Error::UnknownSubCommand(
+                self.names.last().unwrap().to_owned(),
+            ));
         }
 
         println!("{}", self.help());
