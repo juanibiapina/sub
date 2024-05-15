@@ -8,9 +8,19 @@ use crate::commands::Command;
 use crate::commands::external_subcommand;
 
 pub struct TopLevelCommand<'a> {
-    pub name: String,
-    pub path: PathBuf,
-    pub config: &'a Config,
+    name: String,
+    path: PathBuf,
+    config: &'a Config,
+}
+
+impl<'a> TopLevelCommand<'a> {
+    pub fn new(name: String, path: PathBuf, config: &'a Config) -> Result<Self> {
+        Ok(Self {
+            name,
+            path,
+            config,
+        })
+    }
 }
 
 impl<'a> Command for TopLevelCommand<'a> {

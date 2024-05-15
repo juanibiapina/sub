@@ -64,11 +64,7 @@ pub trait Command {
 
 pub fn subcommand(config: &Config, cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
     if cliargs.is_empty() {
-        return Ok(Box::new(TopLevelCommand {
-            name: config.name.to_owned(),
-            path: config.libexec_path(),
-            config,
-        }));
+        return Ok(Box::new(TopLevelCommand::new(config.name.to_owned(), config.libexec_path(), config)?));
     }
 
     external_subcommand(config, cliargs)
@@ -97,12 +93,7 @@ pub fn external_subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<
 
         if cliargs.is_empty() {
             if path.is_dir() {
-                return Ok(Box::new(DirectoryCommand {
-                    names,
-                    path,
-                    args: cliargs,
-                    config,
-                }));
+                return Ok(Box::new(DirectoryCommand::new(names, path, cliargs, config)?));
             }
 
             if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
