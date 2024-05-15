@@ -38,7 +38,7 @@ Available subcommands:
   run main --help no-doc
 
   assert_success
-  assert_output "Usage: main no-doc"
+  assert_output "Usage: main no-doc [args]..."
 }
 
 @test "help: displays help for a subcommand" {
@@ -62,7 +62,7 @@ The help section can span multiple lines."
   run main --help only-summary
 
   assert_success
-  assert_output "Usage: main only-summary
+  assert_output "Usage: main only-summary [args]...
 
 Return with error 4"
 }
@@ -101,7 +101,7 @@ Available subcommands:
   run main --help directory with-help
 
   assert_success
-  assert_output "Usage: main directory with-help
+  assert_output "Usage: main directory with-help [args]...
 
 Help 2
 
@@ -134,7 +134,7 @@ Available subcommands:
   run main --help directory double with-help
 
   assert_success
-  assert_output "Usage: main directory double with-help
+  assert_output "Usage: main directory double with-help [args]...
 
 Help 3
 

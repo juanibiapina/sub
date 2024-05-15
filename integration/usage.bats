@@ -19,7 +19,7 @@ Usage: main --usage [commands_with_args]..."
   run main --usage no-doc
 
   assert_success
-  assert_output "Usage: main no-doc"
+  assert_output "Usage: main no-doc [args]..."
 }
 
 @test "usage: when command has no Usage docstring, accepts any arguments" {
