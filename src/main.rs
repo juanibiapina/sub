@@ -20,14 +20,14 @@ fn main() {
 
     let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
-        Err(error) => handle_error(&config, error, user_cli_args.mode),
+        Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
     };
 
     match user_cli_args.mode {
         UserCliMode::Invoke => {
             match subcommand.invoke() {
                 Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, user_cli_args.mode),
+                Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
             }
         }
         UserCliMode::Usage => {
@@ -52,25 +52,25 @@ fn main() {
         UserCliMode::Completions => {
             match subcommand.completions() {
                 Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, user_cli_args.mode),
+                Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
             }
         }
     }
 }
 
-fn handle_error(config: &Config, error: Error, mode: UserCliMode) -> ! {
+fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
     match error {
         Error::NoCompletions => exit(1),
         Error::SubCommandInterrupted => exit(1),
         Error::NonExecutable(_) => exit(1),
         Error::UnknownSubCommand(name) => {
-            if mode != UserCliMode::Completions {
+            if !silent {
                 println!("{}: no such sub command '{}'", config.name, name);
             }
             exit(1);
         }
         Error::InvalidUsageString(errors) => {
-            if mode != UserCliMode::Completions {
+            if !silent {
                 println!("{}: invalid usage string", config.name);
                 for error in errors {
                     println!("  {}", error);
