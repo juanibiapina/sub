@@ -27,7 +27,7 @@ fn main() {
         UserCliMode::Invoke => {
             match subcommand.invoke() {
                 Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
+                Err(error) => handle_error(&config, error, false),
             }
         }
         UserCliMode::Usage => {
@@ -52,7 +52,7 @@ fn main() {
         UserCliMode::Completions => {
             match subcommand.completions() {
                 Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
+                Err(error) => handle_error(&config, error, true),
             }
         }
     }
