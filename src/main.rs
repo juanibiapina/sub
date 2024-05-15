@@ -16,7 +16,7 @@ fn main() {
 
     let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color);
 
-    let user_cli_command = init_user_cli(&config);
+    let user_cli_command = config.user_cli_command(&config.name);
     let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
 
     let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone(), user_cli_command) {
@@ -154,21 +154,6 @@ enum UserCliMode {
 struct UserCliArgs {
     mode: UserCliMode,
     commands_with_args: Vec<String>,
-}
-
-fn init_user_cli(config: &Config) -> Command {
-    config.base_command(&config.name).no_binary_name(true).disable_help_flag(true)
-        .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
-        .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
-        .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
-
-        .arg(Arg::new("commands").long("commands").num_args(0).help("Print subcommands"))
-        .arg(Arg::new("extension").long("extension").num_args(1).help("Filter subcommands by extension"))
-        .group(ArgGroup::new("extension_group").args(["extension"]).requires("commands"))
-
-        .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help"]).multiple(false).required(false))
-
-        .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..))
 }
 
 fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {

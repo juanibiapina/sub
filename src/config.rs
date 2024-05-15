@@ -1,7 +1,7 @@
 use std::process::exit;
 use std::path::PathBuf;
 
-use clap::{Command, ColorChoice};
+use clap::{Command, ColorChoice, Arg, ArgGroup};
 use clap::builder::Styles;
 
 #[derive(Clone)]
@@ -66,5 +66,20 @@ impl Config {
         };
 
         Command::new(name.to_owned()).color(color_choice).styles(styles)
+    }
+
+    pub fn user_cli_command(&self, name: &str) -> Command {
+        self.base_command(name).no_binary_name(true).disable_help_flag(true)
+            .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
+            .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
+            .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
+
+            .arg(Arg::new("commands").long("commands").num_args(0).help("Print subcommands"))
+            .arg(Arg::new("extension").long("extension").num_args(1).help("Filter subcommands by extension"))
+            .group(ArgGroup::new("extension_group").args(["extension"]).requires("commands"))
+
+            .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help"]).multiple(false).required(false))
+
+            .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..))
     }
 }
