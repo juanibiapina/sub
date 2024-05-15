@@ -31,6 +31,7 @@ enum Mode {
 }
 
 pub struct Docs {
+    pub usage: Option<String>,
     pub summary: Option<String>,
     pub description: Option<String>,
 }
@@ -45,6 +46,7 @@ pub fn extract_docs(path: &Path) -> Docs {
     let comment_block = extract_initial_comment_block(path);
 
     let mut summary = None;
+    let mut usage = None;
     let mut description = Vec::new();
 
     let mut mode = Mode::Out;
@@ -63,6 +65,7 @@ pub fn extract_docs(path: &Path) -> Docs {
             }
 
             if line.starts_with("# Usage:") {
+                usage = Some(line.to_owned());
                 continue;
             }
 
@@ -91,6 +94,7 @@ pub fn extract_docs(path: &Path) -> Docs {
     }
 
     Docs {
+        usage,
         summary,
         description: if description.is_empty() { None } else { Some(description.join("\n")) },
     }

@@ -1,14 +1,11 @@
 extern crate regex;
 
-use regex::Regex;
-
 use chumsky::prelude::*;
 use clap::{Command, Arg};
 
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use std::path::Path;
 
+use crate::parser;
 use crate::error::{Error, Result};
 use crate::config::Config;
 
@@ -67,99 +64,29 @@ impl Usage {
     }
 }
 
-#[derive(PartialEq)]
-enum Mode {
-    Out,
-    Description,
-}
-
 pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
-    lazy_static! {
-        static ref SUMMARY_RE: Regex = Regex::new(r"^# Summary: (.*)$").unwrap();
-        static ref INDENTED_RE: Regex = Regex::new(r"^# ( .*)$").unwrap();
-        static ref EXTENDED_RE: Regex = Regex::new(r"^# (.*)$").unwrap();
-    }
-
-    let comment_block = extract_initial_comment_block(path);
+    let docs = parser::extract_docs(&path);
 
     let mut command = config.base_command(cmd);
 
-    let mut mode = Mode::Out;
-    let mut found_usage = false;
-    let mut description = Vec::new();
-
-    for line in comment_block.lines() {
-        if mode == Mode::Out {
-            if line == "#" {
-                continue;
-            }
-
-            if let Some(caps) = SUMMARY_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    command = command.about(m.as_str().to_owned());
-                    continue;
-                }
-            }
-
-            if line.starts_with("# Usage:") {
-                match usage_parser().parse(line) {
-                    Ok(arguments) => {
-                        found_usage = true;
-                        // TODO add arguments to command
-                    },
-                    Err(e) => return Err(Error::InvalidUsageString(e)),
-                }
-
-                continue;
-            }
-
-            if let Some(caps) = EXTENDED_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    description.push(m.as_str().to_owned());
-                    mode = Mode::Description;
-                    continue;
-                }
-            }
-        }
-
-        if mode == Mode::Description {
-            if line == "#" {
-                description.push("".to_owned());
-                continue;
-            }
-
-            if let Some(caps) = EXTENDED_RE.captures(&line) {
-                if let Some(m) = caps.get(1) {
-                    description.push(m.as_str().to_owned());
-                    continue;
-                }
-            }
-        }
+    if let Some(summary) = docs.summary {
+        command = command.about(summary);
     }
 
-    command = command.long_about(description.join("\n"));
+    if let Some(description) = docs.description {
+        command = command.long_about(description);
+    }
 
-    if !found_usage {
+    if let Some(line) = docs.usage {
+        match usage_parser().parse(line) {
+            Ok(arguments) => {
+                // TODO add arguments to command
+            },
+            Err(e) => return Err(Error::InvalidUsageString(e)),
+        }
+    } else {
         command = command.arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
     }
 
     return Ok(Usage::from_command(command));
-}
-
-fn extract_initial_comment_block(path: &Path) -> String {
-    let file = File::open(path).unwrap();
-
-    let mut lines = Vec::new();
-
-    for line in BufReader::new(file).lines() {
-        let line = line.unwrap();
-
-        if line.starts_with("#") {
-            lines.push(line);
-        } else {
-            break;
-        }
-    }
-
-    lines.join("\n")
 }
