@@ -18,6 +18,10 @@ impl Usage {
             Usage::CmdToken => format!("Usage: {}", cmd),
         }
     }
+
+    pub fn default() -> Self {
+        Usage::CmdToken
+    }
 }
 
 pub fn usage_parser() -> impl Parser<char, Usage, Error = Simple<char>> {

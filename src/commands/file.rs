@@ -10,14 +10,14 @@ use crate::commands::Command;
 pub struct FileCommand<'a> {
     names: Vec<String>,
     path: PathBuf,
-    usage: Option<Usage>,
+    usage: Usage,
     args: Vec<String>,
     config: &'a Config,
 }
 
 impl<'a> FileCommand<'a> {
     pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Result<Self> {
-        let usage = usage::extract_usage(&path)?;
+        let usage = usage::extract_usage(&path)?.unwrap_or(Usage::default());
 
         return Ok(Self {
             names,
@@ -44,10 +44,7 @@ impl<'a> Command for FileCommand<'a> {
 
         let cmd = cmd.join(" ");
 
-        match self.usage {
-            Some(ref usage) => usage.generate(&cmd),
-            None => format!("Usage: {}", cmd),
-        }
+        self.usage.generate(&cmd)
     }
 
     fn description(&self) -> String {
