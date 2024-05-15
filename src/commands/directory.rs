@@ -10,16 +10,14 @@ use crate::commands::external_subcommand;
 pub struct DirectoryCommand<'a> {
     names: Vec<String>,
     path: PathBuf,
-    args: Vec<String>,
     config: &'a Config,
 }
 
 impl<'a> DirectoryCommand<'a> {
-    pub fn new(names: Vec<String>, path: PathBuf, args: Vec<String>, config: &'a Config) -> Result<Self> {
+    pub fn new(names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
         return Ok(Self {
             names,
             path,
-            args,
             config,
         });
     }

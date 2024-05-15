@@ -93,7 +93,7 @@ pub fn external_subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<
 
         if cliargs.is_empty() {
             if path.is_dir() {
-                return Ok(Box::new(DirectoryCommand::new(names, path, cliargs, config)?));
+                return Ok(Box::new(DirectoryCommand::new(names, path, config)?));
             }
 
             if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
