@@ -92,29 +92,11 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn help(&self) -> String {
-        let mut help = String::new();
-
-        let usage = self.usage();
-        if !usage.is_empty() {
-            help.push_str(&usage);
-            help.push_str("\n\n");
-        }
-
-        let summary = self.summary();
-        if !summary.is_empty() {
-            help.push_str(&summary);
-            help.push_str("\n\n");
-        }
-
-        let description = self.description();
-        if !description.is_empty() {
-            help.push_str(&description);
-            help.push_str("\n\n");
-        }
+        let mut help = self.usage.command().render_help().ansi().to_string();
 
         let subcommands = self.subcommands();
         if !subcommands.is_empty() {
-            help.push_str("Available subcommands:\n");
+            help.push_str("\nAvailable subcommands:\n");
 
             let max_width = subcommands
                 .iter()

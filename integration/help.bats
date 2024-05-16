@@ -17,9 +17,19 @@ load test_helper
   run main --help
 
   assert_success
-  assert_output "Usage: main [OPTIONS] [commands_with_args]...
+  assert_output "Top level command summary
 
-Top level command summary
+Usage: main [OPTIONS] [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+      --usage                  Print usage
+  -h, --help                   Print help
+      --completions            Print completions
+      --commands               Print subcommands
+      --extension <extension>  Filter subcommands by extension
 
 Description of the top level command.
 
@@ -80,9 +90,15 @@ The help section can span multiple lines."
   run main --help directory
 
   assert_success
-  assert_output "Usage: main directory [commands_with_args]...
+  assert_output "A directory subcommand
 
-A directory subcommand
+Usage: main directory [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
 
 Documentation for this group.
 
@@ -120,9 +136,15 @@ The help section can span multiple lines."
   run main --help directory double
 
   assert_success
-  assert_output "Usage: main directory double [commands_with_args]...
+  assert_output "Run a double nested command
 
-Run a double nested command
+Usage: main directory double [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
 
 Documentation for this double nested group.
 
