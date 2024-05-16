@@ -87,10 +87,6 @@ impl<'a> Command for DirectoryCommand<'a> {
         self.usage.generate().to_string()
     }
 
-    fn description(&self) -> String {
-        self.usage.command().get_after_help().map(|s| s.ansi().to_string()).unwrap_or_default()
-    }
-
     fn help(&self) -> String {
         let mut help = self.usage.command().render_help().ansi().to_string();
 
