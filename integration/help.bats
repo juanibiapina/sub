@@ -80,7 +80,7 @@ The help section can span multiple lines."
   run main --help directory
 
   assert_success
-  assert_output "Usage: main directory [OPTIONS] [commands_with_args]...
+  assert_output "Usage: main directory [commands_with_args]...
 
 A directory subcommand
 
@@ -120,7 +120,7 @@ The help section can span multiple lines."
   run main --help directory double
 
   assert_success
-  assert_output "Usage: main directory double [OPTIONS] [commands_with_args]...
+  assert_output "Usage: main directory double [commands_with_args]...
 
 Run a double nested command
 

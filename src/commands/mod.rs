@@ -26,7 +26,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
 
     if cliargs.is_empty() {
         if path.is_dir() {
-            return Ok(Box::new(DirectoryCommand::new(&config.name, names, path, config)?));
+            return Ok(Box::new(DirectoryCommand::top_level(names, path, config)?));
         }
 
         panic!("libexec is a file, not a directory");

@@ -1,6 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 
+use clap::Arg;
+
 use crate::commands::subcommand;
 use crate::commands::Command;
 use crate::config::Config;
@@ -16,10 +18,38 @@ pub struct DirectoryCommand<'a> {
 }
 
 impl<'a> DirectoryCommand<'a> {
+    pub fn top_level(names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
+        let readme_path = path.join("README");
+
+        let mut command = config.user_cli_command(&config.name);
+
+        if readme_path.exists() {
+            let docs = parser::extract_docs(&readme_path);
+
+            if let Some(summary) = docs.summary {
+                command = command.about(summary);
+            }
+
+            if let Some(description) = docs.description {
+                command = command.after_help(description);
+            }
+        }
+
+        let usage = Usage::from_command(command);
+
+        return Ok(Self {
+            names,
+            path,
+            usage,
+            config,
+        });
+    }
+
     pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
         let readme_path = path.join("README");
 
-        let mut command = config.user_cli_command(name);
+        let mut command = config.base_command(name);
+        command = command.arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..));
 
         if readme_path.exists() {
             let docs = parser::extract_docs(&readme_path);
