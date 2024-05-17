@@ -2,6 +2,8 @@
 #
 # Summary: Help 3
 #
+# Usage: {cmd} [args]...
+#
 # This is a complete test script with documentation.
 #
 # The help section can span multiple lines.

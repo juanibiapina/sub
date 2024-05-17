@@ -37,7 +37,7 @@ Usage: main --usage [commands_with_args]..."
   run main --usage valid-usage
 
   assert_success
-  assert_output "Usage: main valid-usage"
+  assert_output "Usage: main valid-usage [OPTIONS] <positional> [args]..."
 }
 
 @test "usage: when command has invalid usage docstring, error with message" {
@@ -47,5 +47,29 @@ Usage: main --usage [commands_with_args]..."
 
   assert_failure
   assert_output "main: invalid usage string
-  found \"e\" but expected end of input"
+  found end of input but expected \"{\""
+}
+
+@test "usage: invokes with valid arguments" {
+  fixture "project"
+
+  run main valid-usage --long pos -u extra1 extra2
+
+  assert_success
+  assert_output "--long pos -u extra1 extra2"
+}
+
+@test "usage: invoke with invalid args, prints usage message" {
+  fixture "project"
+
+  run main valid-usage --invalid
+
+  assert_failure
+  assert_output "error: unexpected argument '--invalid' found
+
+  tip: to pass '--invalid' as a value, use '-- --invalid'
+
+Usage: main valid-usage [OPTIONS] <positional> [args]...
+
+For more information, try '--help'."
 }

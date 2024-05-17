@@ -65,7 +65,10 @@ Options:
   assert_success
   assert_output "Command with complete help
 
-Usage: main with-help
+Usage: main with-help [args]...
+
+Arguments:
+  [args]...  
 
 Options:
   -h, --help  Print help

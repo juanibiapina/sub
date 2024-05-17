@@ -2,7 +2,7 @@
 #
 # Summary: Command with complete help
 #
-# Usage: {cmd}
+# Usage: {cmd} [args]...
 #
 # This is a complete test script with documentation.
 #

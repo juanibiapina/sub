@@ -1,1 +1,6 @@
-# Usage: {cmd}
+#!/usr/bin/env bash
+# Usage: {cmd} positional [-u] [--long] [args]...
+
+set -e
+
+echo "$@"
