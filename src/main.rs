@@ -79,6 +79,12 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
             }
             exit(1);
         }
+        Error::InvalidUTF8 => {
+            if !silent {
+                println!("invalid UTF-8");
+            }
+            exit(1);
+        }
     }
 }
 

@@ -41,3 +41,12 @@ PROJECT_DIR="$SUB_TEST_DIR/project"
   assert_success
   assert_output "$PROJECT_DIR"
 }
+
+@test "sub: sets an env variable with argument key value pairs" {
+  fixture "project"
+
+  run $SUB_BIN --name main --absolute "$PROJECT_DIR" -- env-args --long pos ex1 ex2 --more
+
+  assert_success
+  assert_output 'name "pos" u "false" long "true" args "ex1 ex2 --more"'
+}

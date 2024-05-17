@@ -114,6 +114,28 @@ impl Usage {
     pub fn command(&self) -> Command {
         self.command.clone()
     }
+
+    pub fn parse_into_kv(&self, args: &Vec<String>) -> Result<String> {
+        let clap_args = self.command.clone().get_matches_from(args);
+
+        let mut args_parts = Vec::<String>::new();
+
+        for arg in self.command.get_arguments() {
+            if let Some(values) = clap_args.get_raw(arg.get_id().as_str()) {
+                args_parts.push(arg.get_id().to_string());
+
+                let mut value_parts = Vec::new();
+
+                for v in values {
+                    value_parts.push(v.to_str().ok_or(Error::InvalidUTF8)?.to_string());
+                }
+
+                args_parts.push(format!("\"{}\"", value_parts.join(" ")));
+            }
+        }
+
+        Ok(args_parts.join(" "))
+    }
 }
 
 pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
