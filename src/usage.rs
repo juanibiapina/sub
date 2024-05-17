@@ -45,7 +45,7 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
     let optional = just('[').ignore_then(base_arg).then_ignore(just(']')).padded().map(|s| ArgSpec::Optional(s));
     let required = base_arg.padded().map(|s| ArgSpec::Required(s));
 
-    let argument = optional.or(required).then_ignore(none_of(".").rewind());
+    let argument = optional.or(required).then_ignore(none_of(".").ignored().or(end()).rewind());
 
     let rest = just('[').ignore_then(ident).then_ignore(just("]...")).padded();
 
@@ -62,7 +62,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse() {
+    fn parse_without_rest() {
+        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt]";
+        let result = usage_parser().parse(input).unwrap();
+        assert_eq!(result, UsageLang {
+            arguments: vec![
+                ArgSpec::Required(ArgBase::Positional("name".to_owned())),
+                ArgSpec::Required(ArgBase::Short('f')),
+                ArgSpec::Required(ArgBase::Long("long".to_owned())),
+                ArgSpec::Optional(ArgBase::Positional("opt".to_owned())),
+                ArgSpec::Optional(ArgBase::Short('o')),
+                ArgSpec::Optional(ArgBase::Long("longopt".to_owned())),
+            ],
+            rest: None,
+        });
+    }
+
+    #[test]
+    fn parse_with_rest() {
         let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [rest]...";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
