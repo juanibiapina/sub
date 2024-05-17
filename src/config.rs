@@ -16,11 +16,12 @@ pub struct Config {
     pub name: String,
     pub color: Color,
     pub root: PathBuf,
+    infer_long_arguments: bool,
     pub cache_directory: PathBuf,
 }
 
 impl Config {
-    pub fn new(name: String, root: PathBuf, color: Color) -> Config {
+    pub fn new(name: String, root: PathBuf, color: Color, infer_long_arguments: bool) -> Config {
         let xdg_dirs = match xdg::BaseDirectories::with_prefix(&name) {
             Ok(dir) => dir,
             Err(e) => {
@@ -41,6 +42,7 @@ impl Config {
         Config {
             name,
             color,
+            infer_long_arguments,
             root,
             cache_directory,
         }
@@ -65,7 +67,7 @@ impl Config {
             Color::Never => Styles::plain(),
         };
 
-        Command::new(name.to_owned()).color(color_choice).styles(styles)
+        Command::new(name.to_owned()).color(color_choice).styles(styles).infer_long_args(self.infer_long_arguments)
     }
 
     pub fn user_cli_command(&self, name: &str) -> Command {

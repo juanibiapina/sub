@@ -14,23 +14,25 @@ use sub::error::Error;
 fn main() {
     let sub_cli_args = parse_sub_cli_args();
 
-    let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color);
+    let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color, sub_cli_args.infer_long_arguments);
 
     let user_cli_command = config.user_cli_command(&config.name);
     let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
 
     let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
-        Err(error) => handle_error(&config, error, user_cli_args.mode == UserCliMode::Completions),
+        Err(error) => handle_error(
+            &config,
+            error,
+            user_cli_args.mode == UserCliMode::Completions,
+        ),
     };
 
     match user_cli_args.mode {
-        UserCliMode::Invoke => {
-            match subcommand.invoke() {
-                Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, false),
-            }
-        }
+        UserCliMode::Invoke => match subcommand.invoke() {
+            Ok(code) => exit(code),
+            Err(error) => handle_error(&config, error, false),
+        },
         UserCliMode::Usage => {
             println!("{}", subcommand.usage());
         }
@@ -50,12 +52,10 @@ fn main() {
                 }
             }
         }
-        UserCliMode::Completions => {
-            match subcommand.completions() {
-                Ok(code) => exit(code),
-                Err(error) => handle_error(&config, error, true),
-            }
-        }
+        UserCliMode::Completions => match subcommand.completions() {
+            Ok(code) => exit(code),
+            Err(error) => handle_error(&config, error, true),
+        },
     }
 }
 
@@ -89,10 +89,16 @@ fn init_sub_cli() -> Command {
             Arg::new("color")
                 .long("color")
                 .value_name("WHEN")
-                .value_parser(["auto", "always", "never" ])
+                .value_parser(["auto", "always", "never"])
                 .default_value("auto")
                 .num_args(1)
                 .help("Enable colored output for help messages"),
+        )
+        .arg(
+            Arg::new("infer-long-arguments")
+                .long("infer-long-arguments")
+                .num_args(0)
+                .help("Allow partial matches of long arguments"),
         )
         .arg(
             Arg::new("name")
@@ -125,9 +131,7 @@ fn init_sub_cli() -> Command {
                 .args(["bin", "absolute"])
                 .required(true),
         )
-        .arg(
-            Arg::new("cliargs").raw(true),
-        )
+        .arg(Arg::new("cliargs").raw(true))
 }
 
 #[test]
@@ -139,6 +143,7 @@ struct SubCliArgs {
     name: String,
     color: Color,
     root: PathBuf,
+    infer_long_arguments: bool,
     cliargs: Vec<String>,
 }
 
@@ -172,12 +177,19 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
             UserCliMode::Help
         } else if args.get_one::<bool>("commands").cloned().unwrap_or(false) {
             UserCliMode::Commands(args.get_one::<String>("extension").cloned())
-        } else if args.get_one::<bool>("completions").cloned().unwrap_or(false) {
+        } else if args
+            .get_one::<bool>("completions")
+            .cloned()
+            .unwrap_or(false)
+        {
             UserCliMode::Completions
         } else {
             UserCliMode::Invoke
         },
-        commands_with_args: args.get_many("commands_with_args").map(|cmds| cmds.cloned().collect::<Vec<_>>()).unwrap_or_default(),
+        commands_with_args: args
+            .get_many("commands_with_args")
+            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
+            .unwrap_or_default(),
     }
 }
 
@@ -191,37 +203,42 @@ fn parse_sub_cli_args() -> SubCliArgs {
             .expect("`name` is mandatory")
             .clone(),
 
-            color: match args.get_one::<String>("color")
-                .expect("`color` is mandatory")
-                .clone().as_ref() {
-                    "auto" => Color::Auto,
-                    "always" => Color::Always,
-                    "never" => Color::Never,
-                    _ => unreachable!(),
-                },
+        color: match args
+            .get_one::<String>("color")
+            .expect("`color` is mandatory")
+            .clone()
+            .as_ref()
+        {
+            "auto" => Color::Auto,
+            "always" => Color::Always,
+            "never" => Color::Never,
+            _ => unreachable!(),
+        },
 
-                cliargs: args
-                    .get_many("cliargs")
-                    .map(|cmds| cmds.cloned().collect::<Vec<_>>())
-                    .unwrap_or_default(),
+        infer_long_arguments: args.get_one::<bool>("infer-long-arguments").cloned().unwrap_or(false),
 
-                    root: match args.get_one::<PathBuf>("absolute") {
-                        Some(path) => path.clone(),
-                        None => {
-                            let mut path = args
-                                .get_one::<PathBuf>("bin")
-                                .expect("Either `bin` or `absolute` is required")
-                                .canonicalize()
-                                .expect("Invalid `bin` path")
-                                .clone();
-                            path.pop(); // remove bin name
-                            if let Some(relative) = args.get_one::<PathBuf>("relative") {
-                                path.push(relative)
-                            };
-                            path.canonicalize()
-                                .expect("Invalid `bin` or `relative` arguments")
-                        }
-                    },
+        cliargs: args
+            .get_many("cliargs")
+            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
+            .unwrap_or_default(),
+
+        root: match args.get_one::<PathBuf>("absolute") {
+            Some(path) => path.clone(),
+            None => {
+                let mut path = args
+                    .get_one::<PathBuf>("bin")
+                    .expect("Either `bin` or `absolute` is required")
+                    .canonicalize()
+                    .expect("Invalid `bin` path")
+                    .clone();
+                path.pop(); // remove bin name
+                if let Some(relative) = args.get_one::<PathBuf>("relative") {
+                    path.push(relative)
+                };
+                path.canonicalize()
+                    .expect("Invalid `bin` or `relative` arguments")
+            }
+        },
     }
 }
 

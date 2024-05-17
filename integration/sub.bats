@@ -24,6 +24,15 @@ PROJECT_DIR="$SUB_TEST_DIR/project"
     assert_failure
 }
 
+@test "sub: --infer-long-arguments flag" {
+  fixture "project"
+
+  run $SUB_BIN --name main --absolute "$PROJECT_DIR" --infer-long-arguments -- valid-usage --lo pos
+
+  assert_success
+  assert_output "--lo pos"
+}
+
 @test "sub: sets an env variable with the project root" {
   fixture "project"
 
