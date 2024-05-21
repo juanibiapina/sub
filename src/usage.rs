@@ -165,14 +165,14 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
 
 fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
     for arg in usage_lang.arguments {
-        match arg {
+        let clap_arg = match arg {
             ArgSpec::Required(base) => {
                 match base {
                     ArgBase::Positional(ref name) => {
-                        command = command.arg(Arg::new(name).required(true));
+                        Arg::new(name).required(true)
                     }
                     ArgBase::Short(character) => {
-                        command = command.arg(Arg::new(character.to_string()).short(character).num_args(0).required(true));
+                        Arg::new(character.to_string()).short(character).num_args(0).required(true)
                     }
                     ArgBase::Long(ref name, value) => {
                         let mut arg = Arg::new(name).long(name).required(true);
@@ -181,17 +181,17 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
                         } else {
                             arg = arg.num_args(0);
                         }
-                        command = command.arg(arg);
+                        arg
                     }
                 }
             },
             ArgSpec::Optional(base) => {
                 match base {
                     ArgBase::Positional(ref name) => {
-                        command = command.arg(Arg::new(name).required(false));
+                        Arg::new(name).required(false)
                     }
                     ArgBase::Short(character) => {
-                        command = command.arg(Arg::new(character.to_string()).short(character).num_args(0).required(false));
+                        Arg::new(character.to_string()).short(character).num_args(0).required(false)
                     }
                     ArgBase::Long(ref name, value) => {
                         let mut arg = Arg::new(name).long(name).required(false);
@@ -200,11 +200,13 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
                         } else {
                             arg = arg.num_args(0);
                         }
-                        command = command.arg(arg);
+                        arg
                     }
                 }
             },
-        }
+        };
+
+        command = command.arg(clap_arg);
     }
 
     if let Some(rest) = usage_lang.rest {
