@@ -59,6 +59,28 @@ Usage: main --usage [commands_with_args]..."
   assert_output "--long pos -u --value=example extra1 extra2"
 }
 
+@test "usage: invoke fails when exclusive argument is combined with another argument" {
+  fixture "project"
+
+  run main valid-usage --exclusive -u
+
+  assert_failure
+  assert_output "error: the argument '--exclusive' cannot be used with one or more of the other specified arguments
+
+Usage: main valid-usage [OPTIONS] <positional> [args]...
+
+For more information, try '--help'."
+}
+
+@test "usage: invoke succeeds when exclusive argument is used alone" {
+  fixture "project"
+
+  run main valid-usage --exclusive
+
+  assert_success
+  assert_output "--exclusive"
+}
+
 @test "usage: invoke with invalid args, prints usage message" {
   fixture "project"
 

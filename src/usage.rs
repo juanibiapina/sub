@@ -18,9 +18,10 @@ pub enum ArgBase {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ArgSpec {
-    Required(ArgBase),
-    Optional(ArgBase),
+pub struct ArgSpec {
+    base: ArgBase,
+    required: bool,
+    exclusive: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -43,8 +44,8 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
 
     let base_arg = positional.or(short).or(long);
 
-    let optional = just('[').ignore_then(base_arg).then_ignore(just(']')).padded().map(|s| ArgSpec::Optional(s));
-    let required = base_arg.padded().map(|s| ArgSpec::Required(s));
+    let optional = just('[').ignore_then(base_arg).then_ignore(just(']')).then(just('!').or_not().map(|e| e.is_some())).padded().map(|(s, e)| ArgSpec { base: s, required: false, exclusive: e });
+    let required = base_arg.padded().map(|s| ArgSpec { base: s, required: true, exclusive: false });
 
     let argument = optional.or(required).then_ignore(none_of(".").ignored().or(end()).rewind());
 
@@ -64,17 +65,18 @@ mod tests {
 
     #[test]
     fn parse_without_rest() {
-        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [--value=VALUE]";
+        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [--value=VALUE] [--exclusive=EXCLUSIVE]!";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
-                ArgSpec::Required(ArgBase::Positional("name".to_owned())),
-                ArgSpec::Required(ArgBase::Short('f')),
-                ArgSpec::Required(ArgBase::Long("long".to_owned(), None)),
-                ArgSpec::Optional(ArgBase::Positional("opt".to_owned())),
-                ArgSpec::Optional(ArgBase::Short('o')),
-                ArgSpec::Optional(ArgBase::Long("longopt".to_owned(), None)),
-                ArgSpec::Optional(ArgBase::Long("value".to_owned(), Some("VALUE".to_owned()))),
+                ArgSpec{ base: ArgBase::Positional("name".to_owned()), required: true, exclusive: false },
+                ArgSpec{ base: ArgBase::Short('f'), required: true, exclusive: false },
+                ArgSpec{ base: ArgBase::Long("long".to_owned(), None), required: true, exclusive: false },
+                ArgSpec{ base: ArgBase::Positional("opt".to_owned()), required: false, exclusive: false },
+                ArgSpec{ base: ArgBase::Short('o'), required: false, exclusive: false },
+                ArgSpec{ base: ArgBase::Long("longopt".to_owned(), None), required: false, exclusive: false },
+                ArgSpec{ base: ArgBase::Long("value".to_owned(), Some("VALUE".to_owned())), required: false, exclusive: false },
+                ArgSpec{ base: ArgBase::Long("exclusive".to_owned(), Some("EXCLUSIVE".to_owned())), required: false, exclusive: true },
             ],
             rest: None,
         });
@@ -86,8 +88,8 @@ mod tests {
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
-                ArgSpec::Required(ArgBase::Positional("name".to_owned())),
-                ArgSpec::Optional(ArgBase::Positional("opt".to_owned())),
+                ArgSpec{ base: ArgBase::Positional("name".to_owned()), required: true, exclusive: false },
+                ArgSpec{ base: ArgBase::Positional("opt".to_owned()), required: false, exclusive: false },
             ],
             rest: Some("rest".to_owned()),
         });
@@ -165,46 +167,26 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
 
 fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
     for arg in usage_lang.arguments {
-        let clap_arg = match arg {
-            ArgSpec::Required(base) => {
-                match base {
-                    ArgBase::Positional(ref name) => {
-                        Arg::new(name).required(true)
-                    }
-                    ArgBase::Short(character) => {
-                        Arg::new(character.to_string()).short(character).num_args(0).required(true)
-                    }
-                    ArgBase::Long(ref name, value) => {
-                        let mut arg = Arg::new(name).long(name).required(true);
-                        if let Some(value) = value {
-                            arg = arg.num_args(1).value_name(value);
-                        } else {
-                            arg = arg.num_args(0);
-                        }
-                        arg
-                    }
+        let mut clap_arg = match arg.base {
+            ArgBase::Positional(ref name) => {
+                Arg::new(name).required(true)
+            }
+            ArgBase::Short(character) => {
+                Arg::new(character.to_string()).short(character).num_args(0).required(true)
+            }
+            ArgBase::Long(ref name, value) => {
+                let mut arg = Arg::new(name).long(name).required(true);
+                if let Some(value) = value {
+                    arg = arg.num_args(1).value_name(value);
+                } else {
+                    arg = arg.num_args(0);
                 }
-            },
-            ArgSpec::Optional(base) => {
-                match base {
-                    ArgBase::Positional(ref name) => {
-                        Arg::new(name).required(false)
-                    }
-                    ArgBase::Short(character) => {
-                        Arg::new(character.to_string()).short(character).num_args(0).required(false)
-                    }
-                    ArgBase::Long(ref name, value) => {
-                        let mut arg = Arg::new(name).long(name).required(false);
-                        if let Some(value) = value {
-                            arg = arg.num_args(1).value_name(value);
-                        } else {
-                            arg = arg.num_args(0);
-                        }
-                        arg
-                    }
-                }
-            },
+                arg
+            }
         };
+
+        clap_arg = clap_arg.exclusive(arg.exclusive);
+        clap_arg = clap_arg.required(arg.required);
 
         command = command.arg(clap_arg);
     }
