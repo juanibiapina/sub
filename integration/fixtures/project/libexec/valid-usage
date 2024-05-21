@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: {cmd} positional [-u] [--long] [args]...
+# Usage: {cmd} positional [-u] [--long] [--value=VALUE] [args]...
 
 set -e
 

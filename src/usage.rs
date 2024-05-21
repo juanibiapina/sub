@@ -14,7 +14,7 @@ use crate::config::Config;
 pub enum ArgBase {
     Positional(String),
     Short(char),
-    Long(String),
+    Long(String, Option<String>),
 }
 
 #[derive(Debug, PartialEq)]
@@ -35,10 +35,11 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
     let cmd_token = just("{cmd}").padded();
 
     let ident = text::ident().map(|s: String| s);
+    let value = filter(|c: &char| c.is_ascii_alphabetic() && c.is_uppercase()).repeated().at_least(1).map(|v| v.into_iter().collect::<String>());
 
     let positional = ident.padded().map(|s| ArgBase::Positional(s));
     let short = just("-").ignore_then(filter(|c: &char| c.is_alphabetic())).padded().map(|c| ArgBase::Short(c));
-    let long = just("--").ignore_then(ident).padded().map(|s| ArgBase::Long(s));
+    let long = just("--").ignore_then(ident).then(just('=').ignore_then(value).or_not()).padded().map(|(k, v)| ArgBase::Long(k, v));
 
     let base_arg = positional.or(short).or(long);
 
@@ -63,16 +64,17 @@ mod tests {
 
     #[test]
     fn parse_without_rest() {
-        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt]";
+        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [--value=VALUE]";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
                 ArgSpec::Required(ArgBase::Positional("name".to_owned())),
                 ArgSpec::Required(ArgBase::Short('f')),
-                ArgSpec::Required(ArgBase::Long("long".to_owned())),
+                ArgSpec::Required(ArgBase::Long("long".to_owned(), None)),
                 ArgSpec::Optional(ArgBase::Positional("opt".to_owned())),
                 ArgSpec::Optional(ArgBase::Short('o')),
-                ArgSpec::Optional(ArgBase::Long("longopt".to_owned())),
+                ArgSpec::Optional(ArgBase::Long("longopt".to_owned(), None)),
+                ArgSpec::Optional(ArgBase::Long("value".to_owned(), Some("VALUE".to_owned()))),
             ],
             rest: None,
         });
@@ -80,16 +82,12 @@ mod tests {
 
     #[test]
     fn parse_with_rest() {
-        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [rest]...";
+        let input = "# Usage: {cmd} name [opt] [rest]...";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
                 ArgSpec::Required(ArgBase::Positional("name".to_owned())),
-                ArgSpec::Required(ArgBase::Short('f')),
-                ArgSpec::Required(ArgBase::Long("long".to_owned())),
                 ArgSpec::Optional(ArgBase::Positional("opt".to_owned())),
-                ArgSpec::Optional(ArgBase::Short('o')),
-                ArgSpec::Optional(ArgBase::Long("longopt".to_owned())),
             ],
             rest: Some("rest".to_owned()),
         });
@@ -176,8 +174,14 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
                     ArgBase::Short(character) => {
                         command = command.arg(Arg::new(character.to_string()).short(character).num_args(0).required(true));
                     }
-                    ArgBase::Long(ref name) => {
-                        command = command.arg(Arg::new(name).long(name).num_args(0).required(true));
+                    ArgBase::Long(ref name, value) => {
+                        let mut arg = Arg::new(name).long(name).required(true);
+                        if let Some(value) = value {
+                            arg = arg.num_args(1).value_name(value);
+                        } else {
+                            arg = arg.num_args(0);
+                        }
+                        command = command.arg(arg);
                     }
                 }
             },
@@ -189,8 +193,14 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
                     ArgBase::Short(character) => {
                         command = command.arg(Arg::new(character.to_string()).short(character).num_args(0).required(false));
                     }
-                    ArgBase::Long(ref name) => {
-                        command = command.arg(Arg::new(name).long(name).num_args(0).required(false));
+                    ArgBase::Long(ref name, value) => {
+                        let mut arg = Arg::new(name).long(name).required(false);
+                        if let Some(value) = value {
+                            arg = arg.num_args(1).value_name(value);
+                        } else {
+                            arg = arg.num_args(0);
+                        }
+                        command = command.arg(arg);
                     }
                 }
             },

@@ -53,10 +53,10 @@ Usage: main --usage [commands_with_args]..."
 @test "usage: invokes with valid arguments" {
   fixture "project"
 
-  run main valid-usage --long pos -u extra1 extra2
+  run main valid-usage --long pos -u --value=example extra1 extra2
 
   assert_success
-  assert_output "--long pos -u extra1 extra2"
+  assert_output "--long pos -u --value=example extra1 extra2"
 }
 
 @test "usage: invoke with invalid args, prints usage message" {
