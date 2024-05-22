@@ -1,6 +1,7 @@
 pub mod file;
 pub mod directory;
 
+use std::path::PathBuf;
 use std::os::unix::fs::PermissionsExt;
 
 use crate::config::Config;
@@ -17,6 +18,7 @@ pub trait Command {
     fn completions(&self) -> Result<i32>;
     fn invoke(&self) -> Result<i32>;
     fn help(&self) -> Result<String>;
+    fn validate(&self) -> Vec<(PathBuf, Error)>;
 }
 
 pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {

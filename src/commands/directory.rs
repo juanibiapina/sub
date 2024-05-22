@@ -159,4 +159,14 @@ impl<'a> Command for DirectoryCommand<'a> {
 
         Ok(0)
     }
+
+    fn validate(&self) -> Vec<(PathBuf, Error)> {
+        let mut errors = Vec::new();
+
+        for subcommand in self.subcommands() {
+            errors.extend(subcommand.validate());
+        }
+
+        errors
+    }
 }

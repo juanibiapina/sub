@@ -98,4 +98,11 @@ impl<'a> Command for FileCommand<'a> {
             None => Err(Error::SubCommandInterrupted),
         }
     }
+
+    fn validate(&self) -> Vec<(PathBuf, Error)> {
+        match self.usage.validate() {
+            Ok(_) => Vec::new(),
+            Err(e) => vec![(self.path.clone(), e)],
+        }
+    }
 }

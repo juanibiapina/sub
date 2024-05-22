@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{value_parser, Arg, ArgGroup, Command};
+use clap::{value_parser, Arg, ArgAction, ArgGroup, Command};
 
 use std::path::{Path, PathBuf};
 use std::process::exit;
@@ -15,6 +15,28 @@ fn main() {
     let sub_cli_args = parse_sub_cli_args();
 
     let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color, sub_cli_args.infer_long_arguments);
+
+    if sub_cli_args.validate {
+        let top_level_command = match subcommand(&config, Vec::new()) {
+            Ok(subcommand) => subcommand,
+            Err(error) => handle_error(
+                &config,
+                error,
+                false,
+            ),
+        };
+
+        let errors = top_level_command.validate();
+        for error in &errors {
+            println!("{}: {}", error.0.display(), print_error(error.1.clone()));
+        }
+
+        if errors.is_empty() {
+            exit(0);
+        } else {
+            exit(1);
+        }
+    }
 
     let user_cli_command = config.user_cli_command(&config.name);
     let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
@@ -66,6 +88,23 @@ fn main() {
             Ok(code) => exit(code),
             Err(error) => handle_error(&config, error, true),
         },
+    }
+}
+
+fn print_error(error: Error) -> String {
+    match error {
+        Error::NoCompletions => "no completions".to_string(),
+        Error::SubCommandInterrupted => "sub command interrupted".to_string(),
+        Error::NonExecutable(_) => "non-executable".to_string(),
+        Error::UnknownSubCommand(name) => format!("unknown sub command '{}'", name),
+        Error::InvalidUsageString(errors) => {
+            let mut message = "invalid usage string".to_string();
+            for error in errors {
+                message.push_str(&format!("\n  {}", error));
+            }
+            message
+        }
+        Error::InvalidUTF8 => "invalid UTF-8".to_string(),
     }
 }
 
@@ -142,6 +181,13 @@ fn init_sub_cli() -> Command {
                 .value_parser(absolute_path)
                 .help("Sets how to find the root directory as an absolute path"),
         )
+        .arg(
+            Arg::new("validate")
+                .long("validate")
+                .num_args(0)
+                .action(ArgAction::SetTrue)
+                .help("Validate that the CLI is correctly configured"),
+        )
         .group(
             ArgGroup::new("path")
                 .args(["bin", "absolute"])
@@ -160,6 +206,7 @@ struct SubCliArgs {
     color: Color,
     root: PathBuf,
     infer_long_arguments: bool,
+    validate: bool,
     cliargs: Vec<String>,
 }
 
@@ -232,6 +279,8 @@ fn parse_sub_cli_args() -> SubCliArgs {
         },
 
         infer_long_arguments: args.get_one::<bool>("infer-long-arguments").cloned().unwrap_or(false),
+
+        validate: args.get_flag("validate"),
 
         cliargs: args
             .get_many("cliargs")
