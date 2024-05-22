@@ -8,6 +8,7 @@ pub type Result<T> = result::Result<T, Error>;
 pub enum Error {
     NoCompletions,
     NonExecutable(String),
+    NoLibexecDir,
     SubCommandInterrupted,
     UnknownSubCommand(String),
     InvalidUsageString(Vec<Simple<char>>),

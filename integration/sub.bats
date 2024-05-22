@@ -3,6 +3,13 @@ load test_helper
 
 PROJECT_DIR="$SUB_TEST_DIR/project"
 
+@test "sub: when libexec is not a directory, exit with error" {
+  run $SUB_BIN --name main --absolute "$PROJECT_DIR"
+
+  assert_failure
+  assert_output "main: libexec directory not found in root"
+}
+
 @test "sub: reject --bin and --absolute given together" {
   fixture "project"
 
