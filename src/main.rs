@@ -140,6 +140,7 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
 fn init_sub_cli() -> Command {
     Command::new("sub")
         .version(env!("CARGO_PKG_VERSION"))
+        .about("Dynamically generate rich CLIs from scripts.")
         .arg(
             Arg::new("color")
                 .long("color")
@@ -159,27 +160,27 @@ fn init_sub_cli() -> Command {
             Arg::new("name")
                 .long("name")
                 .required(true)
-                .help("Sets the binary name"),
+                .help("Sets the CLI name. Used in help and error messages."),
         )
         .arg(
             Arg::new("bin")
                 .long("bin")
-                .required(true)
                 .value_parser(value_parser!(PathBuf))
-                .help("Sets the path of the CLI binary"),
+                .help("Sets the path of the CLI binary. Only use in combination with --relative."),
         )
         .arg(
             Arg::new("relative")
                 .long("relative")
                 .value_parser(value_parser!(PathBuf))
-                .conflicts_with("absolute")
-                .help("Sets how to find the root directory based on the location of the bin"),
+                .help("Sets how to find the root directory based on the location of the bin. Only use in combination with --bin."),
         )
         .arg(
             Arg::new("absolute")
                 .long("absolute")
+                .required(true)
+                .value_name("PATH")
                 .value_parser(absolute_path)
-                .help("Sets how to find the root directory as an absolute path"),
+                .help("Absolute path to the CLI root directory (where libexec lives)"),
         )
         .arg(
             Arg::new("validate")
@@ -189,11 +190,17 @@ fn init_sub_cli() -> Command {
                 .help("Validate that the CLI is correctly configured"),
         )
         .group(
-            ArgGroup::new("path")
-                .args(["bin", "absolute"])
-                .required(true),
+            ArgGroup::new("bin_and_relative")
+                .args(["bin", "relative"])
+                .multiple(true)
+                .conflicts_with("absolute"),
         )
-        .arg(Arg::new("cliargs").raw(true))
+        .arg(
+            Arg::new("cliargs")
+                .raw(true)
+                .help("Arguments to pass to the CLI"),
+
+        )
 }
 
 #[test]
