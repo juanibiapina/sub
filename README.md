@@ -16,6 +16,42 @@ a directory (and subdirectories) of scripts.
 - **Completions:** Supports auto completion of subcommands.
 - **Cross-platform:** Works on Linux and macOS.
 
+## Installation
+
+### Homebrew
+
+```sh
+brew install juanibiapina/tap/sub
+```
+
+### Nix with Flakes
+
+Add sub to your flake inputs:
+
+```nix
+{
+  inputs = {
+    sub = {
+      url = "github:juanibiapina/sub";
+      inputs.nixpkgs.follows = "nixpkgs"; # Optional
+    };
+  };
+
+  # ...
+}
+```
+
+Then add it to your packages:
+
+```nix
+{
+  environment.systemPackages = with pkgs; [
+    inputs.sub.packages."${pkgs.system}".sub
+    # ...
+  ];
+}
+```
+
 ## Overview
 
 `sub` is meant to be used as the entry point for a CLI. Given the following
