@@ -55,7 +55,7 @@ Then add it to your packages:
 }
 ```
 
-## Overview
+## Usage
 
 `sub` is meant to be used as the entry point for a CLI. Given the following
 directory structure:
@@ -87,9 +87,6 @@ printing help information.
 The `--executable` argument tells `sub` where the CLI entry point is located.
 Usually this will just be `${BASH_SOURCE[0]}`. The `--relative` argument tells
 `sub` how to find the root of the CLI starting from the CLI entry point.
-These two are separate arguments for cross platform compatibility. `sub` will
-canonalize the bin path before merging with the relative path and then canonalize
-again.
 
 After the root directory is determined, `sub` picks up any executable files in
 a `libexec` directory inside root to use as subcommands. Directories create
@@ -110,45 +107,69 @@ $ awesomecli nested command
 
 ## Documenting commands
 
-To get help for a command, use the built in `help` command:
+To get help for a command, use the built in `--help` flag:
 
+```sh
+awesomecli --help <commandname>
 ```
-$ awesomecli help <commandname>
+or
+```sh
+awesomecli <commandname> --help
 ```
 
-In order to display help information, `sub` looks for special comments in each
-file. An example documented command:
+In order to display help information, `sub` looks for special comments in the
+corresponding script. An example documented command:
 
 ```sh
 #!/usr/bin/env bash
 #
 # Summary: One line summary of the command
 #
-# Usage: {cmd} <required-arg>
-#        {cmd} [--option] <required-arg>
-#
-#  --option Activates an option
+# Usage: {cmd} <positional-arg>
 #
 # Extended description of what the command does.
 #
 # The extended description can span multiple lines.
+
+set -e
+
+echo "Hello $1"
 ```
 
 If the command is a directory, `sub` looks for documentation in a `README` file
 inside that directory.
 
-## Sharing code
+## Sharing code between scripts
 
 When invoking subcommands, `sub` sets an environment variable called
 `_CLINAME_ROOT` (where `CLINAME` is the name of your CLI. This variable holds
 the canonicalized path to the root of your CLI. It can be used for instance for
-sourcing shared scripts.
+sourcing shared scripts from a `lib` directory next to `libexec`:
+
+```sh
+source "$_CLINAME_ROOT/lib/shared.sh"
+```
 
 ## Caching
 
 When invoking subcommands, `sub` sets an environment variable called
 `_CLINAME_CACHE` (where `CLINAME` is the name of your CLI. This variable points
 to an XDG compliant cache directory that can be used for storing temporary files.
+
+## Migrating to Sub 2.x
+
+### Usage comments
+
+Sub 2.x introduces automatic validation and parsing of command line arguments
+based on special Usage comments in scripts. If you previously used arbitrary
+Usage comments in sub 1.x for the purpose of documenting, you can run `sub`
+with the `--validate` flag to check if your scripts are compatible with the new
+version.
+
+### Help, commands and completions
+
+If you used the `help`, `commands` or `completions` subcommands, they are now
+`--help`, `--commands` and `--completions` flags respectively.
 
 ## Inspiration
 
