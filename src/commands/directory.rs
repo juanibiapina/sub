@@ -18,7 +18,7 @@ pub struct DirectoryCommand<'a> {
 }
 
 impl<'a> DirectoryCommand<'a> {
-    pub fn top_level(names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
+    pub fn top_level(names: Vec<String>, path: PathBuf, config: &'a Config) -> Self {
         let readme_path = path.join("README");
 
         let mut command = config.user_cli_command(&config.name);
@@ -37,15 +37,15 @@ impl<'a> DirectoryCommand<'a> {
 
         let usage = Usage::new(command, None);
 
-        return Ok(Self {
+        return Self {
             names,
             path,
             usage,
             config,
-        });
+        };
     }
 
-    pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Result<Self> {
+    pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Self {
         let readme_path = path.join("README");
 
         let mut command = config.base_command(name);
@@ -65,12 +65,12 @@ impl<'a> DirectoryCommand<'a> {
 
         let usage = Usage::new(command, None);
 
-        return Ok(Self {
+        return Self {
             names,
             path,
             usage,
             config,
-        });
+        };
     }
 }
 

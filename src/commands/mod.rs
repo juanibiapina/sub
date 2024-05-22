@@ -25,7 +25,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
 
     if cliargs.is_empty() {
         if path.is_dir() {
-            return Ok(Box::new(DirectoryCommand::top_level(names, path, config)?));
+            return Ok(Box::new(DirectoryCommand::top_level(names, path, config)));
         }
 
         panic!("libexec is a file, not a directory");
@@ -52,7 +52,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
             if path.is_dir() {
                 let mut name_parts = vec![config.name.to_owned()];
                 name_parts.append(&mut names.clone());
-                return Ok(Box::new(DirectoryCommand::new(&name_parts.join(" "), names, path, config)?));
+                return Ok(Box::new(DirectoryCommand::new(&name_parts.join(" "), names, path, config)));
             }
 
             if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
