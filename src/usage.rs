@@ -35,7 +35,9 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
 
     let cmd_token = just("{cmd}").padded();
 
-    let ident = text::ident().map(|s: String| s);
+    let ident = filter(|c: &char| c.is_ascii_alphabetic())
+        .chain(filter(|c: &char| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').repeated())
+        .collect();
     let value = filter(|c: &char| c.is_ascii_alphabetic() && c.is_uppercase()).repeated().at_least(1).map(|v| v.into_iter().collect::<String>());
 
     let short = just("-").ignore_then(filter(|c: &char| c.is_alphabetic())).padded().map(|c| ArgBase::Short(c));
@@ -68,11 +70,12 @@ mod tests {
 
     #[test]
     fn parse_without_rest() {
-        let input = "# Usage: {cmd} <name> -f --long [opt] [-o] [--longopt] [--value=VALUE] [--exclusive=EXCLUSIVE]!";
+        let input = "# Usage: {cmd} <name> <m2-_m> -f --long [opt] [-o] [--longopt] [--value=VALUE] [--exclusive=EXCLUSIVE]!";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
                 ArgSpec{ base: ArgBase::Positional("name".to_owned()), required: true, exclusive: false },
+                ArgSpec{ base: ArgBase::Positional("m2-_m".to_owned()), required: true, exclusive: false },
                 ArgSpec{ base: ArgBase::Short('f'), required: true, exclusive: false },
                 ArgSpec{ base: ArgBase::Long("long".to_owned(), None), required: true, exclusive: false },
                 ArgSpec{ base: ArgBase::Positional("opt".to_owned()), required: false, exclusive: false },
