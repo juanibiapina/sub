@@ -113,16 +113,22 @@ impl Usage {
         self.command.clone().render_usage().ansi().to_string()
     }
 
-    pub fn command(&self) -> Command {
-        self.command.clone()
-    }
-
     pub fn validate(&self) -> Result<()> {
         if let Some(error) = &self.error {
             return Err(error.clone());
         }
 
         Ok(())
+    }
+
+    pub fn summary(&self) -> String {
+        self.command.get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
+    }
+
+    pub fn help(&self) -> Result<String> {
+        self.validate()?;
+
+        Ok(self.command.clone().render_help().ansi().to_string())
     }
 
     pub fn parse_into_kv(&self, args: &Vec<String>) -> Result<String> {

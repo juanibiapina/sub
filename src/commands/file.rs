@@ -39,7 +39,7 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn summary(&self) -> String {
-        self.usage.command().get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
+        self.usage.summary()
     }
 
     fn usage(&self) -> Result<String> {
@@ -51,7 +51,7 @@ impl<'a> Command for FileCommand<'a> {
     fn help(&self) -> Result<String> {
         self.usage.validate()?;
 
-        Ok(self.usage.command().render_help().ansi().to_string())
+        self.usage.help()
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {

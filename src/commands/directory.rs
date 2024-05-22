@@ -80,7 +80,7 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn summary(&self) -> String {
-        self.usage.command().get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
+        self.usage.summary()
     }
 
     fn usage(&self) -> Result<String> {
@@ -88,7 +88,7 @@ impl<'a> Command for DirectoryCommand<'a> {
     }
 
     fn help(&self) -> Result<String> {
-        let mut help = self.usage.command().render_help().ansi().to_string();
+        let mut help = self.usage.help()?;
 
         let subcommands = self.subcommands();
         if !subcommands.is_empty() {
