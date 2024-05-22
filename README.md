@@ -75,7 +75,7 @@ directory structure:
 
 The entry point in `bin/awesomecli` can then be:
 
-```
+```bash
 #!/usr/bin/env bash
 
 sub --name awesomecli --executable "${BASH_SOURCE[0]}" --relative ".." -- "$@"
@@ -157,6 +157,10 @@ When invoking subcommands, `sub` sets an environment variable called
 to an XDG compliant cache directory that can be used for storing temporary files.
 
 ## Migrating to Sub 2.x
+
+### --bin was renamed to --executable
+
+The `--bin` argument was renamed to `--executable` to better reflect its purpose.
 
 ### Usage comments
 
