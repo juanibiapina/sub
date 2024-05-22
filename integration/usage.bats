@@ -37,7 +37,7 @@ Usage: main --usage [commands_with_args]..."
   run main --usage valid-usage
 
   assert_success
-  assert_output "Usage: main valid-usage [OPTIONS] <positional> [args]..."
+  assert_output "Usage: main valid-usage [OPTIONS] <positional> [opt] [args]..."
 }
 
 @test "usage: when command has invalid usage docstring, error with message" {
@@ -67,7 +67,7 @@ Usage: main --usage [commands_with_args]..."
   assert_failure
   assert_output "error: the argument '--exclusive' cannot be used with one or more of the other specified arguments
 
-Usage: main valid-usage [OPTIONS] <positional> [args]...
+Usage: main valid-usage [OPTIONS] <positional> [opt] [args]...
 
 For more information, try '--help'."
 }
@@ -91,7 +91,7 @@ For more information, try '--help'."
 
   tip: to pass '--invalid' as a value, use '-- --invalid'
 
-Usage: main valid-usage [OPTIONS] <positional> [args]...
+Usage: main valid-usage [OPTIONS] <positional> [opt] [args]...
 
 For more information, try '--help'."
 }

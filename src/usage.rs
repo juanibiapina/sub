@@ -38,14 +38,17 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
     let ident = text::ident().map(|s: String| s);
     let value = filter(|c: &char| c.is_ascii_alphabetic() && c.is_uppercase()).repeated().at_least(1).map(|v| v.into_iter().collect::<String>());
 
-    let positional = ident.padded().map(|s| ArgBase::Positional(s));
     let short = just("-").ignore_then(filter(|c: &char| c.is_alphabetic())).padded().map(|c| ArgBase::Short(c));
     let long = just("--").ignore_then(ident).then(just('=').ignore_then(value).or_not()).padded().map(|(k, v)| ArgBase::Long(k, v));
 
-    let base_arg = positional.or(short).or(long);
+    let optional_positional = ident.padded().map(|s| ArgBase::Positional(s));
+    let required_positional = just('<').ignore_then(ident).then_ignore(just('>')).padded().map(|s| ArgBase::Positional(s));
 
-    let optional = just('[').ignore_then(base_arg).then_ignore(just(']')).then(just('!').or_not().map(|e| e.is_some())).padded().map(|(s, e)| ArgSpec { base: s, required: false, exclusive: e });
-    let required = base_arg.padded().map(|s| ArgSpec { base: s, required: true, exclusive: false });
+    let in_optional = short.or(long).or(optional_positional);
+    let in_required = short.or(long).or(required_positional);
+
+    let optional = just('[').ignore_then(in_optional).then_ignore(just(']')).then(just('!').or_not().map(|e| e.is_some())).padded().map(|(s, e)| ArgSpec { base: s, required: false, exclusive: e });
+    let required = in_required.padded().map(|s| ArgSpec { base: s, required: true, exclusive: false });
 
     let argument = optional.or(required).then_ignore(none_of(".").ignored().or(end()).rewind());
 
@@ -65,7 +68,7 @@ mod tests {
 
     #[test]
     fn parse_without_rest() {
-        let input = "# Usage: {cmd} name -f --long [opt] [-o] [--longopt] [--value=VALUE] [--exclusive=EXCLUSIVE]!";
+        let input = "# Usage: {cmd} <name> -f --long [opt] [-o] [--longopt] [--value=VALUE] [--exclusive=EXCLUSIVE]!";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![
@@ -84,7 +87,7 @@ mod tests {
 
     #[test]
     fn parse_with_rest() {
-        let input = "# Usage: {cmd} name [opt] [rest]...";
+        let input = "# Usage: {cmd} <name> [opt] [rest]...";
         let result = usage_parser().parse(input).unwrap();
         assert_eq!(result, UsageLang {
             arguments: vec![

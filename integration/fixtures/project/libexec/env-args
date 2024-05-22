@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Usage: {cmd} name [-u] [--long] --value=VALUE [args]...
+# Usage: {cmd} <name> [-u] [--long] --value=VALUE [args]...
 
 set -e
 
