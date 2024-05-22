@@ -6,6 +6,9 @@ Organize groups of scripts into documented CLIs with subcommands.
 interface (CLI) with subcommands. It allows the dynamic creation of a CLI from
 a directory (and subdirectories) of scripts.
 
+Use the Github table of contents on the top right of this README to navigate
+the documentation.
+
 ## Key features
 
 - **Display help:** Display usage and documentation for scripts.
