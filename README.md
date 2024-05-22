@@ -2,6 +2,20 @@
 
 Organize groups of scripts into documented CLIs with subcommands.
 
+`sub` is a tool designed to help organize groups of scripts into a command-line
+interface (CLI) with subcommands. It allows the dynamic creation of a CLI from
+a directory (and subdirectories) of scripts.
+
+## Key features
+
+- **Display help:** Display usage and documentation for scripts.
+- **Validate arguments:** Validate arguments to scripts based on documentation.
+- **Parse arguments:** Automatically parse arguments to scripts so `getopts` is not needed.
+- **Nested subcommands:** Supports nested directories for hierarchical command structures.
+- **Aliases:** Supports aliases for subcommands.
+- **Completions:** Supports auto completion of subcommands.
+- **Cross-platform:** Works on Linux and macOS.
+
 ## Overview
 
 `sub` is meant to be used as the entry point for a CLI. Given the following
