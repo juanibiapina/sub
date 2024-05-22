@@ -36,10 +36,11 @@ Description of the top level command.
 Extended documentation.
 
 Available subcommands:
-    a.sh       A sh script
-    b          
-    c.other    
-    nested     "
+    a.sh             A sh script
+    b                
+    c.other          
+    invalid-usage    
+    nested           "
 }
 
 @test "help: displays usage for a non documented command" {

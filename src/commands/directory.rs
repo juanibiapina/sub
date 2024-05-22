@@ -35,7 +35,7 @@ impl<'a> DirectoryCommand<'a> {
             }
         }
 
-        let usage = Usage::from_command(command);
+        let usage = Usage::new(command, None);
 
         return Ok(Self {
             names,
@@ -63,7 +63,7 @@ impl<'a> DirectoryCommand<'a> {
             }
         }
 
-        let usage = Usage::from_command(command);
+        let usage = Usage::new(command, None);
 
         return Ok(Self {
             names,
@@ -83,11 +83,11 @@ impl<'a> Command for DirectoryCommand<'a> {
         self.usage.command().get_about().map(|s| s.ansi().to_string()).unwrap_or_default()
     }
 
-    fn usage(&self) -> String {
-        self.usage.generate().to_string()
+    fn usage(&self) -> Result<String> {
+        Ok(self.usage.generate().to_string())
     }
 
-    fn help(&self) -> String {
+    fn help(&self) -> Result<String> {
         let mut help = self.usage.command().render_help().ansi().to_string();
 
         let subcommands = self.subcommands();
@@ -113,7 +113,7 @@ impl<'a> Command for DirectoryCommand<'a> {
             }
         }
 
-        help
+        Ok(help)
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
@@ -155,7 +155,7 @@ impl<'a> Command for DirectoryCommand<'a> {
             ));
         }
 
-        println!("{}", self.help());
+        println!("{}", self.help()?);
 
         Ok(0)
     }

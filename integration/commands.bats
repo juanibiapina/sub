@@ -11,6 +11,7 @@ load test_helper
   assert_output "a.sh
 b
 c.other
+invalid-usage
 nested"
 }
 

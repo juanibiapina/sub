@@ -12,11 +12,11 @@ use crate::error::Error;
 pub trait Command {
     fn name(&self) -> &str;
     fn summary(&self) -> String;
-    fn usage(&self) -> String;
+    fn usage(&self) -> Result<String>;
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>>;
     fn completions(&self) -> Result<i32>;
     fn invoke(&self) -> Result<i32>;
-    fn help(&self) -> String;
+    fn help(&self) -> Result<String>;
 }
 
 pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
@@ -59,7 +59,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
                 return Err(Error::NonExecutable(head.to_owned()));
             }
 
-            return Ok(Box::new(FileCommand::new(names, path, cliargs, config)?));
+            return Ok(Box::new(FileCommand::new(names, path, cliargs, config)));
         }
 
         if path.is_dir() {
@@ -70,7 +70,7 @@ pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn C
             return Err(Error::NonExecutable(head.to_owned()));
         }
 
-        return Ok(Box::new(FileCommand::new(names, path, cliargs, config)?));
+        return Ok(Box::new(FileCommand::new(names, path, cliargs, config)));
     }
 }
 

@@ -34,10 +34,20 @@ fn main() {
             Err(error) => handle_error(&config, error, false),
         },
         UserCliMode::Usage => {
-            println!("{}", subcommand.usage());
+            let usage = match subcommand.usage() {
+                Ok(usage) => usage,
+                Err(error) => handle_error(&config, error, false),
+            };
+
+            println!("{}", usage);
         }
         UserCliMode::Help => {
-            println!("{}", subcommand.help());
+            let help = match subcommand.help() {
+                Ok(help) => help,
+                Err(error) => handle_error(&config, error, false),
+            };
+
+            println!("{}", help);
         }
         UserCliMode::Commands(extension) => {
             for subcommand in subcommand.subcommands() {

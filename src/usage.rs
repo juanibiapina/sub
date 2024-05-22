@@ -98,12 +98,14 @@ mod tests {
 
 pub struct Usage {
     command: Command,
+    error: Option<Error>,
 }
 
 impl Usage {
-    pub fn from_command(command: Command) -> Self {
+    pub fn new(command: Command, error: Option<Error>) -> Self {
         Self {
             command,
+            error,
         }
     }
 
@@ -113,6 +115,14 @@ impl Usage {
 
     pub fn command(&self) -> Command {
         self.command.clone()
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        if let Some(error) = &self.error {
+            return Err(error.clone());
+        }
+
+        Ok(())
     }
 
     pub fn parse_into_kv(&self, args: &Vec<String>) -> Result<String> {
@@ -138,7 +148,7 @@ impl Usage {
     }
 }
 
-pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
+pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
     let docs = parser::extract_docs(&path);
 
     let mut command = config.base_command(cmd).no_binary_name(true);
@@ -151,18 +161,20 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Result<Usage> {
         command = command.after_help(description);
     }
 
+    let mut error = None;
+
     if let Some(line) = docs.usage {
         match usage_parser().parse(line) {
             Ok(usage_lang) => {
                 command = apply_arguments(command, usage_lang);
             },
-            Err(e) => return Err(Error::InvalidUsageString(e)),
+            Err(e) => error = Some(Error::InvalidUsageString(e)),
         }
     } else {
         command = command.arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
     }
 
-    return Ok(Usage::from_command(command));
+    return Usage::new(command, error);
 }
 
 fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
