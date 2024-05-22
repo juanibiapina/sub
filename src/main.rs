@@ -167,19 +167,19 @@ fn init_sub_cli() -> Command {
             Arg::new("name")
                 .long("name")
                 .required(true)
-                .help("Sets the CLI name. Used in help and error messages."),
+                .help("Sets the CLI name - used in help and error messages"),
         )
         .arg(
-            Arg::new("bin")
-                .long("bin")
+            Arg::new("executable")
+                .long("executable")
                 .value_parser(value_parser!(PathBuf))
-                .help("Sets the path of the CLI binary. Only use in combination with --relative."),
+                .help("Sets the path of the CLI executable; only use in combination with --relative"),
         )
         .arg(
             Arg::new("relative")
                 .long("relative")
                 .value_parser(value_parser!(PathBuf))
-                .help("Sets how to find the root directory based on the location of the bin. Only use in combination with --bin."),
+                .help("Sets how to find the root directory based on the location of the executable; Only use in combination with --executable"),
         )
         .arg(
             Arg::new("absolute")
@@ -197,8 +197,8 @@ fn init_sub_cli() -> Command {
                 .help("Validate that the CLI is correctly configured"),
         )
         .group(
-            ArgGroup::new("bin_and_relative")
-                .args(["bin", "relative"])
+            ArgGroup::new("executable_and_relative")
+                .args(["executable", "relative"])
                 .multiple(true)
                 .conflicts_with("absolute"),
         )
@@ -305,18 +305,18 @@ fn parse_sub_cli_args() -> SubCliArgs {
             Some(path) => path.clone(),
             None => {
                 let mut path = args
-                    .get_one::<PathBuf>("bin")
-                    .expect("Either `bin` or `absolute` is required")
+                    .get_one::<PathBuf>("executable")
+                    .expect("Either `executable` or `absolute` is required")
                     .canonicalize()
-                    .expect("Invalid `bin` path")
+                    .expect("Invalid `executable` path")
                     .clone();
 
-                path.pop(); // remove bin name
+                path.pop(); // remove executable name
 
                 let relative = args.get_one::<PathBuf>("relative").expect("Missing `relative` argument");
                 path.push(relative);
 
-                path.canonicalize().expect("Invalid `bin` or `relative` arguments")
+                path.canonicalize().expect("Invalid `executable` or `relative` arguments")
             }
         },
     }

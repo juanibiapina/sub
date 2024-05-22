@@ -25,15 +25,15 @@ The entry point in `bin/awesomecli` can then be:
 ```
 #!/usr/bin/env bash
 
-sub --name awesomecli --bin "${BASH_SOURCE[0]}" --relative ".." -- "$@"
+sub --name awesomecli --executable "${BASH_SOURCE[0]}" --relative ".." -- "$@"
 ```
 
 The `--name` argument tells `sub` the name of the CLI. This is used when
 printing help information.
 
-The `--bin` argument tells `sub` where the binary entry point is located.
+The `--executable` argument tells `sub` where the CLI entry point is located.
 Usually this will just be `${BASH_SOURCE[0]}`. The `--relative` argument tells
-`sub` how to find the root of the CLI starting from the binary entry point.
+`sub` how to find the root of the CLI starting from the CLI entry point.
 These two are separate arguments for cross platform compatibility. `sub` will
 canonalize the bin path before merging with the relative path and then canonalize
 again.

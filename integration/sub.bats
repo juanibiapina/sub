@@ -10,10 +10,10 @@ PROJECT_DIR="$SUB_TEST_DIR/project"
   assert_output "main: libexec directory not found in root"
 }
 
-@test "sub: reject --bin and --absolute given together" {
+@test "sub: reject --executable and --absolute given together" {
   fixture "project"
 
-  run $SUB_BIN --name main --bin "$PROJECT_DIR" --absolute "$PROJECT_DIR"
+  run $SUB_BIN --name main --executable "$PROJECT_DIR" --absolute "$PROJECT_DIR"
   assert_failure
 }
 
