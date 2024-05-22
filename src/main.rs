@@ -310,12 +310,13 @@ fn parse_sub_cli_args() -> SubCliArgs {
                     .canonicalize()
                     .expect("Invalid `bin` path")
                     .clone();
+
                 path.pop(); // remove bin name
-                if let Some(relative) = args.get_one::<PathBuf>("relative") {
-                    path.push(relative)
-                };
-                path.canonicalize()
-                    .expect("Invalid `bin` or `relative` arguments")
+
+                let relative = args.get_one::<PathBuf>("relative").expect("Missing `relative` argument");
+                path.push(relative);
+
+                path.canonicalize().expect("Invalid `bin` or `relative` arguments")
             }
         },
     }
