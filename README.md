@@ -186,6 +186,14 @@ file. The special comments are:
 - Extended documentation: Any other comment lines in this initial block will be
   considered part of the extended documentation.
 
+## Aliases
+
+To define an alias, simply create a symlink. In the `libexec` directory:
+
+```sh
+ln -s user-script1 us1
+```
+
 ## Sharing code between scripts
 
 When invoking subcommands, `sub` sets an environment variable called
