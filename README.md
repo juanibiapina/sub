@@ -57,10 +57,12 @@ Then add it to your packages:
 
 ## Setup
 
+This section explains how to set up a CLI called `hat` using `sub`.
+
 ### As an alias
 
 The quickest way to get started with `sub` is to define an alias for your CLI
-(let's call it `hat`) in your shell:
+in your shell:
 
 ```sh
 alias hat='sub --name hat --absolute /path/to/cli/root --'
@@ -107,7 +109,7 @@ line above, just replace `hat` with the name of your CLI.
 
 ## Usage
 
-Once you have set up your CLI, you can get help by running:
+Once you have set up your CLI (we called it `hat`), you can get help by running:
 
 ```sh
 $ hat --help
@@ -178,13 +180,71 @@ fi
 file. The special comments are:
 
 - `Summary:` A short description of the script.
-- `Usage:` A description of the arguments the script accepts. The `{cmd}` token
-  is required and will be replaced by the name of the script. Note that the
-  Usage comment syntax must be valid and is used to parse command line
-  arguments. See the [Usage syntax](#usage-syntax) section for more
-  information.
+- `Usage:` A description of the arguments the script accepts. Note that the
+  Usage comment, when present, has specific syntactic rules and is used to
+  parse command line arguments. See [Validating arguments](#validating-arguments)
+  and [Parsing arguments](#parsing-arguments) for more information.
 - Extended documentation: Any other comment lines in this initial block will be
   considered part of the extended documentation.
+
+## Validating arguments
+
+`sub` automatically validates arguments to scripts based on the `Usage`
+comment when it is present. The syntax for the `Usage` comment is:
+
+```
+# Usage: {cmd} <positional> [optional] [-u] [--long] [--value=VALUE] [--exclusive]! [rest]...
+```
+
+- `{cmd}`: This special token represents the name of the command and is always required.
+- `<positional>`: A required positional argument.
+- `[optional]`: An optional positional argument.
+- `[-u]`: An optional short flag.
+- `[--long]`: An optional long flag.
+- `[--value=VALUE]`: An optional long flag that takes a value.
+- `[--exclusive]!`: An optional long flag that cannot be used with other flags.
+- `[rest]...`: A rest argument that consumes all remaining arguments.
+
+Short and long flags can also be made required by omitting the brackets.
+
+When invoking a script with invalid arguments, `sub` will display an error. For
+example, invoking the `hello` script from the previous section with invalid
+arguments:
+
+```sh
+$ hat hello
+```
+
+```
+error: the following required arguments were not provided:
+  <name>
+
+Usage: hat hello --spanish <name>
+
+For more information, try '--help'.
+```
+
+## Parsing arguments
+
+When arguments to a script are valid, `sub` sets an environment variable called
+`_HAT_ARGS` (where `HAT` is the capitalized name of your CLI). This variable
+holds the parsed arguments as a list of key value pairs. The value of this
+variable is a string that can be evaluated to an associative array in bash
+scripts:
+
+```sh
+declare -A args="($_HAT_ARGS)"
+```
+
+Which can then be used to access argument values:
+
+```sh
+echo "${args[positional]}"
+
+if [[ "${args[long]}" == "true" ]]; then
+  # ...
+fi
+```
 
 ## Nested subcommands
 
