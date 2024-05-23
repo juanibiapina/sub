@@ -186,6 +186,39 @@ file. The special comments are:
 - Extended documentation: Any other comment lines in this initial block will be
   considered part of the extended documentation.
 
+## Nested subcommands
+
+`sub` supports nested directories for hierarchical command structures. For
+example, given the following directory structure:
+
+```
+.
+└── libexec
+    └── nested
+        ├── README
+        └── user-script2
+```
+
+`user-script2` can be invoked with:
+
+```sh
+$ hat nested user-script2
+```
+
+Directories can be nested arbitrarily deep.
+
+A `README` file can be placed in a directory to provide a description of the
+subcommands in that directory. The `README` file should be formatted like a
+script, with a special comment block at the beginning:
+
+```sh
+# Summary: A collection of user scripts
+#
+# This directory contains scripts that do magic.
+# This help can be as long as you want.
+# The Usage comment is ignored in README files.
+```
+
 ## Aliases
 
 To define an alias, simply create a symlink. For example, in the `libexec`
