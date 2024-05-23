@@ -2,144 +2,177 @@
 
 load test_helper
 
-@test "help: without arguments, displays help for top level command" {
-  fixture "project"
+@test "help: takes short flag" {
+  fixture "commands"
 
-  run main help
+  run main -h
 
   assert_success
-  assert_output "Usage: main [<subcommands>] [<args>]
+  assert_output "$(main --help)"
+}
 
-Top level command summary
+@test "help: displays help for top level command" {
+  fixture "commands"
+
+  run main --help
+
+  assert_success
+  assert_output "Top level command summary
+
+Usage: main [OPTIONS] [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+      --usage                  Print usage
+  -h, --help                   Print help
+      --completions            Print completions
+      --commands               Print subcommands
+      --extension <extension>  Filter subcommands by extension
 
 Description of the top level command.
 
 Extended documentation.
 
 Available subcommands:
-    commands    List available commands
-    echo        Echo arguments
-    env         Print the value of an environment variable
-    error       Return with error 4
-    help        Display help for a sub command
-    nested      Run a nested command
-    no-doc      
-
-Use 'main help <command>' for information on a specific command."
+    a.sh             A sh script
+    b                
+    c.other          
+    invalid-usage    
+    nested           "
 }
 
 @test "help: displays usage for a non documented command" {
   fixture "project"
 
-  run main help no-doc
+  run main --help no-doc
 
   assert_success
-  assert_output "Usage: main no-doc"
+  assert_output "Usage: main no-doc [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help"
 }
 
 @test "help: displays help for a subcommand" {
   fixture "project"
 
-  run main help echo
+  run main --help with-help
 
   assert_success
-  assert_output "Usage: main echo
-       main echo [<args>]
+  assert_output "Command with complete help
 
- --complete  Provides completions
+Usage: main with-help [args]...
 
-Echo arguments
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 
 The help section can span multiple lines."
 }
 
-@test "help: displays summary for subcommand if help is not available" {
-  fixture "project"
-
-  run main help error
-
-  assert_success
-  assert_output "Usage: main error
-
-Return with error 4"
-}
-
 @test "help: fails gracefully when requested command doesn't exist" {
   fixture "project"
 
-  run main help not-found
+  run main --help not-found
 
   assert_failure
   assert_output "main: no such sub command 'not-found'"
 }
 
-@test "help: displays help for a nested command" {
+@test "help: displays help for a directory command" {
   fixture "project"
 
-  run main help nested
+  run main --help directory
 
   assert_success
-  assert_output "Usage: main nested [<subcommands>] [<args>]
+  assert_output "A directory subcommand
 
-Run a nested command
+Usage: main directory [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
 
 Documentation for this group.
 
 Extended documentation.
 
 Available subcommands:
-    double    Run a double nested command
-    echo      Echo arguments 2
-
-Use 'main help nested <command>' for information on a specific command."
+    double       Run a double nested command
+    with-help    Help 2"
 }
 
 @test "help: displays help for a nested subcommand" {
   fixture "project"
 
-  run main help nested echo
+  run main --help directory with-help
 
   assert_success
-  assert_output "Usage: main nested echo [<args>]
+  assert_output "Help 2
 
-Echo arguments 2
+Usage: main directory with-help [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 
 The help section can span multiple lines."
 }
 
-@test "help: displays help for a double nested command" {
+@test "help: displays help for a double nested directory command" {
   fixture "project"
 
-  run main help nested double
+  run main --help directory double
 
   assert_success
-  assert_output "Usage: main nested double [<subcommands>] [<args>]
+  assert_output "Run a double nested command
 
-Run a double nested command
+Usage: main directory double [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
 
 Documentation for this double nested group.
 
 Extended documentation.
 
 Available subcommands:
-    echo    Echo arguments 3
-
-Use 'main help nested double <command>' for information on a specific command."
+    with-help    Help 3"
 }
 
 @test "help: displays help for a double nested sub command" {
   fixture "project"
 
-  run main help nested double echo
+  run main --help directory double with-help
 
   assert_success
-  assert_output "Usage: main nested double echo [<args>]
+  assert_output "Help 3
 
-Echo arguments 3
+Usage: main directory double with-help [args]...
+
+Arguments:
+  [args]...  
+
+Options:
+  -h, --help  Print help
 
 This is a complete test script with documentation.
 

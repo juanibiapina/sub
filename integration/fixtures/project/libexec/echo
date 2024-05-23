@@ -2,11 +2,6 @@
 #
 # Summary: Echo arguments
 #
-# Usage: {cmd}
-#        {cmd} [<args>]
-#
-#  --complete  Provides completions
-#
 # This is a complete test script with documentation.
 #
 # The help section can span multiple lines.

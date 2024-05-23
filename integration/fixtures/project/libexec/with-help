@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 #
-# Summary: Echo arguments 3
+# Summary: Command with complete help
+#
+# Usage: {cmd} [args]...
 #
 # This is a complete test script with documentation.
 #
 # The help section can span multiple lines.
 
 set -e
-
-# Provide completions
-if [ "$1" = "--complete" ]; then
-  echo compn1
-  echo compn2
-  exit
-fi
 
 echo "$@"

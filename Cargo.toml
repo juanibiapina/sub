@@ -5,7 +5,8 @@ authors = ["Juan Ibiapina <juanibiapina@gmail.com>"]
 edition = "2021"
 
 [dependencies]
-clap = "4"
+chumsky = "*"
+clap = { version = "*", features = ["string"] }
 lazy_static = "*"
 regex = "*"
 xdg = "*"

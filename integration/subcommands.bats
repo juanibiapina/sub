@@ -8,7 +8,7 @@ load test_helper
   run main
 
   assert_success
-  assert_output "$(main help)"
+  assert_output "$(main --help)"
 }
 
 @test "subcommands: ignores hidden files" {
@@ -50,10 +50,10 @@ load test_helper
 @test "subcommands: accepts dashes in arguments to subcommands" {
   fixture "project"
 
-  run main echo -a -b
+  run main echo -a --long
 
   assert_success
-  assert_output "-a -b"
+  assert_output "-a --long"
 }
 
 @test "subcommands: returns the subcommand exit code" {

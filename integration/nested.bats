@@ -8,7 +8,23 @@ load test_helper
   run main nested
 
   assert_success
-  assert_output "$(main help nested)"
+  assert_output "Run a nested command
+
+Usage: main nested [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
+
+Documentation for this group.
+
+Extended documentation.
+
+Available subcommands:
+    double    Run a double nested command
+    echo      Echo arguments 2"
 }
 
 @test "nested: with a non existent subcommand, displays error message" {
@@ -35,5 +51,20 @@ load test_helper
   run main nested double
 
   assert_success
-  assert_output "$(main help nested double)"
+  assert_output "Run a double nested command
+
+Usage: main nested double [commands_with_args]...
+
+Arguments:
+  [commands_with_args]...  
+
+Options:
+  -h, --help  Print help
+
+Documentation for this double nested group.
+
+Extended documentation.
+
+Available subcommands:
+    echo    Echo arguments 3"
 }

@@ -1,55 +1,40 @@
+pub mod file;
+pub mod directory;
+
+use std::path::PathBuf;
 use std::os::unix::fs::PermissionsExt;
 
 use crate::config::Config;
-use crate::commands::external::ExternalCommand;
-use crate::commands::toplevel::TopLevelCommand;
-use crate::commands::internal::help::internal_help;
-use crate::commands::internal::commands::internal_commands;
-use crate::commands::internal::completions::internal_completions;
+use crate::commands::file::FileCommand;
+use crate::commands::directory::DirectoryCommand;
 use crate::error::Result;
 use crate::error::Error;
-
-pub mod internal;
-pub mod external;
-pub mod toplevel;
 
 pub trait Command {
     fn name(&self) -> &str;
     fn summary(&self) -> String;
-    fn usage(&self) -> String;
-    fn help(&self) -> String;
+    fn usage(&self) -> Result<String>;
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>>;
     fn completions(&self) -> Result<i32>;
     fn invoke(&self) -> Result<i32>;
+    fn help(&self) -> Result<String>;
+    fn validate(&self) -> Vec<(PathBuf, Error)>;
 }
 
-pub fn subcommand(config: &Config, mut names: Vec<String>) -> Result<Box<dyn Command + '_>> {
-    if names.is_empty() {
-        return Ok(Box::new(TopLevelCommand {
-            name: config.name.to_owned(),
-            path: config.libexec_path(),
-            config,
-        }));
-    }
-
-    let name = &names[0];
-
-    match name.as_ref() {
-        "help" => Ok(Box::new(internal_help(config, names.split_off(1)))),
-        "commands" => Ok(Box::new(internal_commands(config, names.split_off(1)))),
-        "completions" => Ok(Box::new(internal_completions(config, names.split_off(1)))),
-        _ => {
-            external_subcommand(config, names)
-        },
-    }
-}
-
-pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box<dyn Command + '_>> {
+pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
     let mut path = config.libexec_path();
     let mut names = Vec::new();
 
+    if cliargs.is_empty() {
+        if path.is_dir() {
+            return Ok(Box::new(DirectoryCommand::top_level(names, path, config)));
+        } else {
+            return Err(Error::NoLibexecDir);
+        }
+    }
+
     loop {
-        let head = args[0].clone();
+        let head = cliargs[0].clone();
 
         if head.starts_with('.') {
             return Err(Error::UnknownSubCommand(head.to_owned()));
@@ -63,28 +48,20 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
 
         names.push(head.to_owned());
 
-        args = args.split_off(1);
+        cliargs = cliargs.split_off(1);
 
-        if args.is_empty() {
+        if cliargs.is_empty() {
             if path.is_dir() {
-                return Ok(Box::new(ExternalCommand {
-                    names,
-                    path,
-                    args,
-                    config,
-                }));
+                let mut name_parts = vec![config.name.to_owned()];
+                name_parts.append(&mut names.clone());
+                return Ok(Box::new(DirectoryCommand::new(&name_parts.join(" "), names, path, config)));
             }
 
             if path.metadata().unwrap().permissions().mode() & 0o111 == 0 {
                 return Err(Error::NonExecutable(head.to_owned()));
             }
 
-            return Ok(Box::new(ExternalCommand {
-                names,
-                path,
-                args,
-                config,
-            }));
+            return Ok(Box::new(FileCommand::new(names, path, cliargs, config)));
         }
 
         if path.is_dir() {
@@ -95,12 +72,7 @@ pub fn external_subcommand(config: &Config, mut args: Vec<String>) -> Result<Box
             return Err(Error::NonExecutable(head.to_owned()));
         }
 
-        return Ok(Box::new(ExternalCommand {
-            names,
-            path,
-            args,
-            config,
-        }));
+        return Ok(Box::new(FileCommand::new(names, path, cliargs, config)));
     }
 }
 

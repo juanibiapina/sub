@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+# Provide completions
+if [ "$1" = "--complete" ]; then
+  echo comp1
+  echo comp2
+  exit
+fi

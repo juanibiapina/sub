@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Usage: {cmd} <positional> [opt] [-u] [--long] [--exclusive]! [--value=VALUE] [args]...
+
+set -e
+
+echo "$@"

@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-$SUB_BIN --name main --bin "${BASH_SOURCE[0]}" --relative ".." -- "$@"
