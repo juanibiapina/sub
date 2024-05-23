@@ -188,11 +188,19 @@ file. The special comments are:
 
 ## Aliases
 
-To define an alias, simply create a symlink. In the `libexec` directory:
+To define an alias, simply create a symlink. For example, in the `libexec`
+directory:
 
 ```sh
 ln -s user-script1 us1
 ```
+
+Aliases can also point to scripts in subdirectories:
+```sh
+ln -s nested/user-script2 us2
+```
+
+The full power of symlinks can be used to create complex command structures.
 
 ## Sharing code between scripts
 
