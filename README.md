@@ -94,7 +94,7 @@ the following directory structure:
 
 The entry point in `bin/hat` is then:
 
-```bash
+```sh
 #!/usr/bin/env bash
 
 sub --name hat --executable "${BASH_SOURCE[0]}" --relative ".." -- "$@"
