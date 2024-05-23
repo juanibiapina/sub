@@ -174,12 +174,24 @@ else
 fi
 ```
 
+`sub` looks for special comments in a comment block in the beginning of the
+file. The special comments are:
+
+- `Summary:` A short description of the script.
+- `Usage:` A description of the arguments the script accepts. The `{cmd}` token
+  is required and will be replaced by the name of the script. Note that the
+  Usage comment syntax must be valid and is used to parse command line
+  arguments. See the [Usage syntax](#usage-syntax) section for more
+  information.
+- Extended documentation: Any other comment lines in this initial block will be
+  considered part of the extended documentation.
+
 ## Sharing code between scripts
 
 When invoking subcommands, `sub` sets an environment variable called
 `_HAT_ROOT` (where `HAT` is the capitalized name of your CLI. This variable
-holds the canonicalized path to the root of your CLI. It can be used for
-instance for sourcing shared scripts from a `lib` directory next to `libexec`:
+holds the path to the root of your CLI. It can be used, for instance, for
+sourcing shared scripts from a `lib` directory next to `libexec`:
 
 ```sh
 source "$_CLINAME_ROOT/lib/shared.sh"
@@ -190,11 +202,11 @@ source "$_CLINAME_ROOT/lib/shared.sh"
 When invoking subcommands, `sub` sets an environment variable called
 `_HAT_CACHE` (where `HAT` is the capitalized name of your CLI. This variable
 points to an XDG compliant cache directory that can be used for storing
-temporary files.
+temporary files shared between subcommands.
 
 ## Migrating to Sub 2.x
 
-### change --bin was to --executable
+### change --bin to --executable
 
 The `--bin` argument was renamed to `--executable` to better reflect its purpose.
 
