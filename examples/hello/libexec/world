@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Summary: Say hello
+# Usage: {cmd}
+
+set -e
+
+echo "Hello, world!"

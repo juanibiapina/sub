@@ -59,6 +59,11 @@ Then add it to your packages:
 
 This section explains how to set up a CLI called `hat` using `sub`.
 
+### Hello World
+
+For a working example, check out a [hello
+world](https://github.com/juanibiapina/sub/tree/master/examples/hello) project.
+
 ### As an alias
 
 The quickest way to get started with `sub` is to define an alias for your CLI

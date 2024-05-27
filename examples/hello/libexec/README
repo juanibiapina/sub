@@ -1,0 +1,13 @@
+# Summary: CLI implementation of Hello World
+#
+# A "Hello, World!" program is generally a simple computer program which outputs
+# (or displays) to the screen (often the console) a message similar to "Hello,
+# World!" while ignoring any user input. A small piece of code in most
+# general-purpose programming languages, this program is used to illustrate a
+# language's basic syntax. A "Hello, World!" program is often the first written
+# by a student of a new programming language,[1] but such a program can also be
+# used as a sanity check to ensure that the computer software intended to compile
+# or run source code is correctly installed, and that its operator understands
+# how to use it.
+#
+# https://en.wikipedia.org/wiki/%22Hello,_World!%22_program
