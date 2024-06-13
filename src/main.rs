@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{value_parser, Arg, ArgAction, ArgGroup, Command};
+use clap::{Args, Parser, Command};
 
 use std::path::{Path, PathBuf};
 use std::process::exit;
@@ -144,75 +144,54 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
     }
 }
 
-fn init_sub_cli() -> Command {
-    Command::new("sub")
-        .version(env!("CARGO_PKG_VERSION"))
-        .about("Dynamically generate rich CLIs from scripts.")
-        .arg(
-            Arg::new("color")
-                .long("color")
-                .value_name("WHEN")
-                .value_parser(["auto", "always", "never"])
-                .default_value("auto")
-                .num_args(1)
-                .help("Enable colored output for help messages"),
-        )
-        .arg(
-            Arg::new("infer-long-arguments")
-                .long("infer-long-arguments")
-                .num_args(0)
-                .help("Allow partial matches of long arguments"),
-        )
-        .arg(
-            Arg::new("name")
-                .long("name")
-                .required(true)
-                .help("Sets the CLI name - used in help and error messages"),
-        )
-        .arg(
-            Arg::new("executable")
-                .long("executable")
-                .value_parser(value_parser!(PathBuf))
-                .help("Sets the path of the CLI executable; only use in combination with --relative"),
-        )
-        .arg(
-            Arg::new("relative")
-                .long("relative")
-                .value_parser(value_parser!(PathBuf))
-                .help("Sets how to find the root directory based on the location of the executable; Only use in combination with --executable"),
-        )
-        .arg(
-            Arg::new("absolute")
-                .long("absolute")
-                .required(true)
-                .value_name("PATH")
-                .value_parser(absolute_path)
-                .help("Absolute path to the CLI root directory (where libexec lives)"),
-        )
-        .arg(
-            Arg::new("validate")
-                .long("validate")
-                .num_args(0)
-                .action(ArgAction::SetTrue)
-                .help("Validate that the CLI is correctly configured"),
-        )
-        .group(
-            ArgGroup::new("executable_and_relative")
-                .args(["executable", "relative"])
-                .multiple(true)
-                .conflicts_with("absolute"),
-        )
-        .arg(
-            Arg::new("cliargs")
-                .raw(true)
-                .help("Arguments to pass to the CLI"),
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct SubCli {
+    #[arg(short, long)]
+    #[arg(default_value = "auto", value_parser = ["auto", "always", "never"])]
+    #[arg(help = "Enable colored output for help messages")]
+    color: String,
 
-        )
+    #[arg(long)]
+    #[arg(help = "Allow partial matches of long arguments")]
+    infer_long_arguments: bool,
+
+    #[arg(long)]
+    #[arg(help = "Sets the CLI name - used in help and error messages")]
+    name: String,
+
+    #[arg(long)]
+    #[arg(value_parser = absolute_path)]
+    #[arg(help = "Absolute path to the CLI root directory (where libexec lives)")]
+    absolute: Option<PathBuf>,
+
+    #[command(flatten)]
+    exec_and_rel: ExecutableAndRelative,
+
+    #[arg(long)]
+    #[arg(help = "Validate that the CLI is correctly configured")]
+    validate: bool,
+
+    #[arg(help = "Arguments to pass to the CLI", raw = true)]
+    cliargs: Vec<String>,
+}
+
+#[derive(Args)]
+#[group(multiple = true, conflicts_with = "absolute")]
+struct ExecutableAndRelative {
+    #[arg(long)]
+    #[arg(help = "Sets the path of the CLI executable; only use in combination with --relative")]
+    executable: Option<PathBuf>,
+
+    #[arg(long)]
+    #[arg(help = "Sets how to find the root directory based on the location of the executable; Only use in combination with --executable")]
+    relative: Option<PathBuf>,
 }
 
 #[test]
 fn verify_cli() {
-    init_sub_cli().debug_assert();
+    use clap::CommandFactory;
+    SubCli::command().debug_assert();
 }
 
 struct SubCliArgs {
@@ -271,41 +250,28 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
 }
 
 fn parse_sub_cli_args() -> SubCliArgs {
-    let sub_cli = init_sub_cli();
-    let args = sub_cli.get_matches();
+    let args = SubCli::parse();
 
     SubCliArgs {
-        name: args
-            .get_one::<String>("name")
-            .expect("`name` is mandatory")
-            .clone(),
+        name: args.name,
 
-        color: match args
-            .get_one::<String>("color")
-            .expect("`color` is mandatory")
-            .clone()
-            .as_ref()
-        {
+        color: match args.color.as_ref() {
             "auto" => Color::Auto,
             "always" => Color::Always,
             "never" => Color::Never,
             _ => unreachable!(),
         },
 
-        infer_long_arguments: args.get_one::<bool>("infer-long-arguments").cloned().unwrap_or(false),
+        infer_long_arguments: args.infer_long_arguments,
 
-        validate: args.get_flag("validate"),
+        validate: args.validate,
 
-        cliargs: args
-            .get_many("cliargs")
-            .map(|cmds| cmds.cloned().collect::<Vec<_>>())
-            .unwrap_or_default(),
+        cliargs: args.cliargs,
 
-        root: match args.get_one::<PathBuf>("absolute") {
+        root: match args.absolute {
             Some(path) => path.clone(),
             None => {
-                let mut path = args
-                    .get_one::<PathBuf>("executable")
+                let mut path = args.exec_and_rel.executable
                     .expect("Either `executable` or `absolute` is required")
                     .canonicalize()
                     .expect("Invalid `executable` path")
@@ -313,7 +279,7 @@ fn parse_sub_cli_args() -> SubCliArgs {
 
                 path.pop(); // remove executable name
 
-                let relative = args.get_one::<PathBuf>("relative").expect("Missing `relative` argument");
+                let relative = args.exec_and_rel.relative.expect("Missing `relative` argument");
                 path.push(relative);
 
                 path.canonicalize().expect("Invalid `executable` or `relative` arguments")
