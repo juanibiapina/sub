@@ -1,13 +1,16 @@
 use std::process::exit;
 use std::path::PathBuf;
 
-use clap::{Command, ColorChoice, Arg, ArgGroup};
+use clap::{Command, ColorChoice, Arg, ArgGroup, ValueEnum};
 use clap::builder::Styles;
 
-#[derive(Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum Color {
+    /// Enables colored output only when the output is going to a terminal or TTY.
     Auto,
+    /// Enables colored output regardless of whether or not the output is going to a terminal/TTY.
     Always,
+    /// Disables colored output no matter if the output is going to a terminal/TTY, or not.
     Never,
 }
 

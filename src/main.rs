@@ -148,9 +148,9 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
 #[command(version, about, long_about = None)]
 struct SubCli {
     #[arg(short, long)]
-    #[arg(default_value = "auto", value_parser = ["auto", "always", "never"])]
+    #[arg(default_value = "auto")]
     #[arg(help = "Enable colored output for help messages")]
-    color: String,
+    color: Color,
 
     #[arg(long)]
     #[arg(help = "Allow partial matches of long arguments")]
@@ -255,12 +255,7 @@ fn parse_sub_cli_args() -> SubCliArgs {
     SubCliArgs {
         name: args.name,
 
-        color: match args.color.as_ref() {
-            "auto" => Color::Auto,
-            "always" => Color::Always,
-            "never" => Color::Never,
-            _ => unreachable!(),
-        },
+        color: args.color,
 
         infer_long_arguments: args.infer_long_arguments,
 
