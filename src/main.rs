@@ -177,7 +177,7 @@ struct SubCli {
 }
 
 #[derive(Args)]
-#[group(multiple = true, conflicts_with = "absolute")]
+#[group(multiple = true, conflicts_with = "absolute", requires_all = ["executable", "relative"])]
 struct ExecutableAndRelative {
     #[arg(long)]
     #[arg(help = "Sets the path of the CLI executable; only use in combination with --relative")]
@@ -252,6 +252,26 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
 fn parse_sub_cli_args() -> SubCliArgs {
     let args = SubCli::parse();
 
+    let root = match args.absolute {
+        Some(path) => path.clone(),
+        None => {
+            let mut path = args.exec_and_rel.executable
+                // this code is unreachable because clap is validating the arguments
+                .unwrap_or_else(|| unreachable!("Missing `executable` argument"))
+                .canonicalize()
+                .expect("Invalid `executable` path")
+                .clone();
+
+            path.pop(); // remove executable name
+
+            // this code is unreachable because clap is validating the arguments
+            let relative = args.exec_and_rel.relative.unwrap_or_else(|| unreachable!("Missing `relative` argument"));
+            path.push(relative);
+
+            path.canonicalize().expect("Invalid `executable` or `relative` arguments")
+        }
+    };
+
     SubCliArgs {
         name: args.name,
 
@@ -263,23 +283,7 @@ fn parse_sub_cli_args() -> SubCliArgs {
 
         cliargs: args.cliargs,
 
-        root: match args.absolute {
-            Some(path) => path.clone(),
-            None => {
-                let mut path = args.exec_and_rel.executable
-                    .expect("Either `executable` or `absolute` is required")
-                    .canonicalize()
-                    .expect("Invalid `executable` path")
-                    .clone();
-
-                path.pop(); // remove executable name
-
-                let relative = args.exec_and_rel.relative.expect("Missing `relative` argument");
-                path.push(relative);
-
-                path.canonicalize().expect("Invalid `executable` or `relative` arguments")
-            }
-        },
+        root,
     }
 }
 
