@@ -16,28 +16,6 @@ fn main() {
 
     let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color, sub_cli_args.infer_long_arguments);
 
-    if sub_cli_args.validate {
-        let top_level_command = match subcommand(&config, Vec::new()) {
-            Ok(subcommand) => subcommand,
-            Err(error) => handle_error(
-                &config,
-                error,
-                false,
-            ),
-        };
-
-        let errors = top_level_command.validate();
-        for error in &errors {
-            println!("{}: {}", error.0.display(), print_error(error.1.clone()));
-        }
-
-        if errors.is_empty() {
-            exit(0);
-        } else {
-            exit(1);
-        }
-    }
-
     let user_cli_command = config.user_cli_command(&config.name);
     let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
 
@@ -88,6 +66,18 @@ fn main() {
             Ok(code) => exit(code),
             Err(error) => handle_error(&config, error, true),
         },
+        UserCliMode::Validate => {
+            let errors = subcommand.validate();
+            for error in &errors {
+                println!("{}: {}", error.0.display(), print_error(error.1.clone()));
+            }
+
+            if errors.is_empty() {
+                exit(0);
+            } else {
+                exit(1);
+            }
+        }
     }
 }
 
@@ -168,10 +158,6 @@ struct SubCli {
     #[command(flatten)]
     exec_and_rel: ExecutableAndRelative,
 
-    #[arg(long)]
-    #[arg(help = "Validate that the CLI is correctly configured")]
-    validate: bool,
-
     #[arg(help = "Arguments to pass to the CLI", raw = true)]
     cliargs: Vec<String>,
 }
@@ -199,7 +185,6 @@ struct SubCliArgs {
     color: Color,
     root: PathBuf,
     infer_long_arguments: bool,
-    validate: bool,
     cliargs: Vec<String>,
 }
 
@@ -210,6 +195,7 @@ enum UserCliMode {
     Help,
     Commands(Option<String>),
     Completions,
+    Validate,
 }
 
 struct UserCliArgs {
@@ -233,6 +219,8 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
             UserCliMode::Help
         } else if args.get_one::<bool>("commands").cloned().unwrap_or(false) {
             UserCliMode::Commands(args.get_one::<String>("extension").cloned())
+        } else if args.get_one::<bool>("validate").cloned().unwrap_or(false) {
+            UserCliMode::Validate
         } else if args
             .get_one::<bool>("completions")
             .cloned()
@@ -278,8 +266,6 @@ fn parse_sub_cli_args() -> SubCliArgs {
         color: args.color,
 
         infer_long_arguments: args.infer_long_arguments,
-
-        validate: args.validate,
 
         cliargs: args.cliargs,
 

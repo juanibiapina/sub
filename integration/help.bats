@@ -28,6 +28,7 @@ Options:
       --usage                  Print usage
   -h, --help                   Print help
       --completions            Print completions
+      --validate               Validate subcommand
       --commands               Print subcommands
       --extension <extension>  Filter subcommands by extension
 

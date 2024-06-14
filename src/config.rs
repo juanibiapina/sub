@@ -78,12 +78,13 @@ impl Config {
             .arg(Arg::new("usage").long("usage").num_args(0).help("Print usage"))
             .arg(Arg::new("help").short('h').long("help").num_args(0).help("Print help"))
             .arg(Arg::new("completions").long("completions").num_args(0).help("Print completions"))
+            .arg(Arg::new("validate").long("validate").num_args(0).help("Validate subcommand"))
 
             .arg(Arg::new("commands").long("commands").num_args(0).help("Print subcommands"))
             .arg(Arg::new("extension").long("extension").num_args(1).help("Filter subcommands by extension"))
             .group(ArgGroup::new("extension_group").args(["extension"]).requires("commands"))
 
-            .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help"]).multiple(false).required(false))
+            .group(ArgGroup::new("exclusion").args(["commands", "completions", "usage", "help", "validate"]).multiple(false).required(false))
 
             .arg(Arg::new("commands_with_args").trailing_var_arg(true).allow_hyphen_values(true).num_args(..))
     }

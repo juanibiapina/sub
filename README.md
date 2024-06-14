@@ -332,6 +332,11 @@ Usage comments in sub 1.x for the purpose of documenting, you can run `sub`
 with the `--validate` flag to check if your scripts are compatible with the new
 version.
 
+Example:
+```
+$ sub --name hat --absolute /path/to/cli/root -- --validate
+```
+
 ### Help, commands and completions
 
 If you used the `help`, `commands` or `completions` subcommands, they are now
