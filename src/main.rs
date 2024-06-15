@@ -150,26 +150,29 @@ struct SubCli {
     #[arg(help = "Sets the CLI name - used in help and error messages")]
     name: String,
 
-    #[arg(long)]
-    #[arg(value_parser = absolute_path)]
-    #[arg(help = "Absolute path to the CLI root directory (where libexec lives)")]
-    absolute: Option<PathBuf>,
-
     #[command(flatten)]
-    exec_and_rel: ExecutableAndRelative,
+    path_args: PathArgs,
 
     #[arg(help = "Arguments to pass to the CLI", raw = true)]
     cliargs: Vec<String>,
 }
 
 #[derive(Args)]
-#[group(multiple = true, conflicts_with = "absolute", requires_all = ["executable", "relative"])]
-struct ExecutableAndRelative {
+#[group(id = "path", multiple = true, required = true)]
+struct PathArgs {
     #[arg(long)]
+    #[arg(value_parser = absolute_path)]
+    #[arg(conflicts_with_all = ["executable", "relative"])]
+    #[arg(help = "Absolute path to the CLI root directory (where libexec lives)")]
+    absolute: Option<PathBuf>,
+
+    #[arg(long)]
+    #[arg(requires = "relative")]
     #[arg(help = "Sets the path of the CLI executable; only use in combination with --relative")]
     executable: Option<PathBuf>,
 
     #[arg(long)]
+    #[arg(requires = "executable")]
     #[arg(help = "Sets how to find the root directory based on the location of the executable; Only use in combination with --executable")]
     relative: Option<PathBuf>,
 }
@@ -240,10 +243,10 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
 fn parse_sub_cli_args() -> SubCliArgs {
     let args = SubCli::parse();
 
-    let root = match args.absolute {
+    let root = match args.path_args.absolute {
         Some(path) => path.clone(),
         None => {
-            let mut path = args.exec_and_rel.executable
+            let mut path = args.path_args.executable
                 // this code is unreachable because clap is validating the arguments
                 .unwrap_or_else(|| unreachable!("Missing `executable` argument"))
                 .canonicalize()
@@ -253,7 +256,7 @@ fn parse_sub_cli_args() -> SubCliArgs {
             path.pop(); // remove executable name
 
             // this code is unreachable because clap is validating the arguments
-            let relative = args.exec_and_rel.relative.unwrap_or_else(|| unreachable!("Missing `relative` argument"));
+            let relative = args.path_args.relative.unwrap_or_else(|| unreachable!("Missing `relative` argument"));
             path.push(relative);
 
             path.canonicalize().expect("Invalid `executable` or `relative` arguments")
