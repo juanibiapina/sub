@@ -93,6 +93,7 @@ fn print_error(error: Error) -> String {
         }
         Error::InvalidUTF8 => "invalid UTF-8".to_string(),
         Error::NoLibexecDir => "libexec directory not found in root".to_string(),
+        Error::SubCommandIoError(e) => format!("IO Error: {}", e),
     }
 }
 
@@ -125,6 +126,12 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
         Error::NoLibexecDir => {
             if !silent {
                 println!("{}: libexec directory not found in root", config.name);
+            }
+            exit(1);
+        }
+        Error::SubCommandIoError(e) => {
+            if !silent {
+                println!("{}: {}", config.name, e);
             }
             exit(1);
         }

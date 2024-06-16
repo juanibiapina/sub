@@ -72,3 +72,12 @@ load test_helper
   assert_failure
   assert_output "main: no such sub command 'not-found'"
 }
+
+@test "subcommands: handles invalid shebang lines gracefully" {
+  fixture "project"
+
+  run main invalid-exec
+
+  assert_failure
+  assert_output "main: Exec format error (os error 8)"
+}

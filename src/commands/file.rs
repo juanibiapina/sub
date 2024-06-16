@@ -91,7 +91,10 @@ impl<'a> Command for FileCommand<'a> {
         command.env(format!("_{}_CACHE", self.config.name.to_uppercase()), &self.config.cache_directory);
         command.env(format!("_{}_ARGS", self.config.name.to_uppercase()), &self.usage.parse_into_kv(&self.args)?);
 
-        let status = command.status().unwrap();
+        let status = match command.status() {
+            Ok(status) => status,
+            Err(e) => return Err(Error::SubCommandIoError(std::rc::Rc::new(e))),
+        };
 
         match status.code() {
             Some(code) => Ok(code),
