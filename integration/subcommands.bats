@@ -81,3 +81,12 @@ load test_helper
   assert_failure
   assert_output "main: Exec format error (os error 8)"
 }
+
+@test "subcommands: handles missing interpreters gracefully" {
+  fixture "project"
+
+  run main missing-interpreter
+
+  assert_failure
+  assert_output "main: No such file or directory (os error 2)"
+}
