@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.1.0 - 16.06.2024
+
+- Rework `--validation` flag. It now needs to come after `--` and validates any
+  command (not just the top level command)
+- Improve arguments validation
+
 ## v2.0.0 - 23.05.2024
 
 Release 2.0.0 is a major release that includes breaking changes.
