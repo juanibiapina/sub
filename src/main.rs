@@ -2,7 +2,7 @@ extern crate sub;
 
 extern crate clap;
 
-use clap::{Args, Parser, Command};
+use clap::{Args, Parser};
 
 use std::path::{Path, PathBuf};
 use std::process::exit;
@@ -12,12 +12,9 @@ use sub::config::{Color, Config};
 use sub::error::Error;
 
 fn main() {
-    let sub_cli_args = parse_sub_cli_args();
+    let (config, cliargs) = parse_sub_cli_args();
 
-    let config = Config::new(sub_cli_args.name, sub_cli_args.root, sub_cli_args.color, sub_cli_args.infer_long_arguments);
-
-    let user_cli_command = config.user_cli_command(&config.name);
-    let user_cli_args = parse_user_cli_args(&user_cli_command, sub_cli_args.cliargs);
+    let user_cli_args = parse_user_cli_args(&config, cliargs);
 
     let subcommand = match subcommand(&config, user_cli_args.commands_with_args.clone()) {
         Ok(subcommand) => subcommand,
@@ -183,14 +180,6 @@ fn verify_cli() {
     SubCli::command().debug_assert();
 }
 
-struct SubCliArgs {
-    name: String,
-    color: Color,
-    root: PathBuf,
-    infer_long_arguments: bool,
-    cliargs: Vec<String>,
-}
-
 #[derive(PartialEq)]
 enum UserCliMode {
     Invoke,
@@ -206,8 +195,10 @@ struct UserCliArgs {
     commands_with_args: Vec<String>,
 }
 
-fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
-    let args = match cmd.clone().try_get_matches_from(cliargs) {
+fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
+    let user_cli_command = config.user_cli_command(&config.name);
+
+    let args = match user_cli_command.clone().try_get_matches_from(cliargs) {
         Ok(args) => args,
         Err(e) => {
             e.print().unwrap();
@@ -240,7 +231,7 @@ fn parse_user_cli_args(cmd: &Command, cliargs: Vec<String>) -> UserCliArgs {
     }
 }
 
-fn parse_sub_cli_args() -> SubCliArgs {
+fn parse_sub_cli_args() -> (Config, Vec<String>) {
     let args = SubCli::parse();
 
     let root = match args.path_args.absolute {
@@ -263,17 +254,9 @@ fn parse_sub_cli_args() -> SubCliArgs {
         }
     };
 
-    SubCliArgs {
-        name: args.name,
+    let config = Config::new(args.name, root, args.color, args.infer_long_arguments);
 
-        color: args.color,
-
-        infer_long_arguments: args.infer_long_arguments,
-
-        cliargs: args.cliargs,
-
-        root,
-    }
+    return (config, args.cliargs);
 }
 
 fn absolute_path(s: &str) -> Result<PathBuf, String> {
