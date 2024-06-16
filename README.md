@@ -19,6 +19,10 @@ the documentation.
 - **Completions:** Supports auto completion of subcommands.
 - **Cross-platform:** Works on Linux and macOS.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/664235.svg)](https://asciinema.org/a/664235)
+
 ## Installation
 
 ### Homebrew

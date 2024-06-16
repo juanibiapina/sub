@@ -94,7 +94,9 @@
             modules = [
               {
                 packages = with pkgs; [
+                  asciinema
                   bats
+                  doitlive
                 ];
 
                 languages.rust.enable = true;

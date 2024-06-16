@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Usage: {cmd} <name> [--spanish] [rest]...
+
+declare -A args="(${_HAT_ARGS})"
+
+if [ "${args[spanish]}" == "true" ]; then
+  echo "Hola ${args[name]}!"
+else
+  echo "Hi ${args[name]}!"
+fi
+
+if [ ! -z "${args[rest]}" ]; then
+  echo "Also: ${args[rest]}"
+fi
