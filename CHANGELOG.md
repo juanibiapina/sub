@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.3.0 - 20.06.2024
+
+- Add support for literal commands in completions
+
 ## v2.2.0 - 20.06.2024
 
 - Add new completions system. The old system is still supported so this isn't a
