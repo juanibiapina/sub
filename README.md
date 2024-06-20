@@ -35,7 +35,7 @@ brew install juanibiapina/tap/sub
 </details>
 
 <details>
-<summary>Nix with Flakes (binary install)</summary>
+<summary>Nix with Flakes (install the `sub` binary)</summary>
 
 Add sub to your flake inputs:
 
@@ -62,6 +62,18 @@ Then add it to your packages:
   ];
 }
 ```
+</details>
+
+<details>
+<summary>Nix with Flakes (including setup)</summary>
+
+This repository is a flake that exports a function
+`lib.${system}.mkSubDerivation`. This function creates a package for your cli
+that uses `sub` as the entry point and already includes the [Setup](#setup).
+
+For an example on how to use it, check out https://github.com/ggazzi/dev-cli-utils
+
+Thanks [@ggazzi](https://github.com/ggazzi) for writing this module.
 </details>
 
 ## Setup
