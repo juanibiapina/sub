@@ -53,7 +53,7 @@ Available subcommands:
   assert_output "Usage: main no-doc [args]...
 
 Arguments:
-  [args]...  
+  [args]...  other arguments
 
 Options:
   -h, --help  Print help"

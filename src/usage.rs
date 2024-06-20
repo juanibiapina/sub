@@ -215,7 +215,7 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
             Err(e) => error = Some(Error::InvalidUsageString(e)),
         }
     } else {
-        command = command.arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
+        command = command.arg(Arg::new("args").help("other arguments").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
     }
 
     // both command and error are returned because an invalid usage string doesn't prevent the
