@@ -35,6 +35,7 @@ struct UsageLang {
 #[derive(Debug, PartialEq, Clone)]
 pub enum CompletionType {
     Script,
+    LiteralCommand(String),
 }
 
 #[derive(Debug, PartialEq)]
@@ -50,8 +51,9 @@ fn option_parser() -> impl Parser<char, OptionSpec, Error = Simple<char>> {
         .collect();
 
     let completion_type_script = just("script").map(|_| CompletionType::Script);
+    let completion_type_literal_command = just('`').ignore_then(take_until(just('`')).padded()).map(|(s, _)| CompletionType::LiteralCommand(s.into_iter().collect()));
 
-    let completion_type = completion_type_script;
+    let completion_type = completion_type_script.or(completion_type_literal_command);
 
     let description = take_until(end()).padded().map(|(s, _)| s.into_iter().collect());
 

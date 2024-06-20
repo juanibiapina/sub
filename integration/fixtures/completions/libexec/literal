@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#
+# Usage: {cmd} <option>
+# Options:
+#   option (`echo itworks`): Description of option
+
+exit 202

@@ -40,6 +40,15 @@ comp2"
 comp4"
 }
 
+@test "completions: literal command: invokes command for completions" {
+  fixture "completions"
+
+  run main --completions literal
+
+  assert_success
+  assert_output "itworks"
+}
+
 @test "completions: lists nothing if command provides no completions" {
   fixture "completions"
 

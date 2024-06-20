@@ -84,6 +84,17 @@ impl<'a> Command for FileCommand<'a> {
                         None => Err(Error::SubCommandInterrupted),
                     };
                 },
+                Some(usage::CompletionType::LiteralCommand(cmd)) => {
+                    let mut command = process::Command::new("/bin/sh");
+                    command.arg("-c").arg(&cmd);
+
+                    let status = command.status().unwrap();
+
+                    return match status.code() {
+                        Some(code) => Ok(code),
+                        None => Err(Error::SubCommandInterrupted),
+                    };
+                },
                 None => {
                     // do nothing
                 },

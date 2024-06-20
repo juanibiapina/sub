@@ -265,13 +265,27 @@ fi
 
 ## Completions
 
-`sub` automatically provides completions for subcommand names.
+sub automatically provides completions for subcommand names.
 
 To enable completions for positional arguments in the `Usage` comment, add an
 `Options:` comment with a list of arguments. An option must have the format:
-`name (completion_type): description`. Completion type is optional. Currently,
-the only supported completion type is `script`, which allows for dynamic
-completions like the following example:
+`name (completion_type): description`. Completion type is optional.
+The following completion types are supported:
+
+- `` `command` ``: Runs a command to generate completions. The command should print
+  completions to stdout:
+
+```sh
+# Usage: {cmd} <file>
+# Options:
+#   file (`ls -1`): File or directory
+
+# script logic
+# ...
+```
+
+- `script`: Invokes the current script to generate completions. This allows for
+  more complex completions:
 
 ```sh
 # Usage: {cmd} <name>
@@ -284,7 +298,7 @@ if [[ "$_HAT_COMPLETE" == "true" ]]; then
     echo "Alice"
     echo "Bob"
     echo "Charlie"
-    # note that you can run any command here to generate completions
+    # note that you can have any logic here to generate completions
   fi
 
   # make sure to exit when generating completions to prevent the script from running
