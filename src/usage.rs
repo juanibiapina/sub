@@ -3,8 +3,10 @@ extern crate clap;
 
 use chumsky::prelude::*;
 use clap::{Command, Arg};
+use clap::error::{ContextKind, ContextValue};
 
 use std::path::Path;
+use std::collections::HashMap;
 
 use crate::parser;
 use crate::error::{Error, Result};
@@ -28,6 +30,36 @@ pub struct ArgSpec {
 struct UsageLang {
     arguments: Vec<ArgSpec>,
     rest: Option<String>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum CompletionType {
+    Script,
+}
+
+#[derive(Debug, PartialEq)]
+struct OptionSpec {
+    name: String,
+    completion_type: Option<CompletionType>,
+    description: Option<String>,
+}
+
+fn option_parser() -> impl Parser<char, OptionSpec, Error = Simple<char>> {
+    let ident = filter(|c: &char| c.is_ascii_alphabetic())
+        .chain(filter(|c: &char| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').repeated())
+        .collect();
+
+    let completion_type_script = just("script").map(|_| CompletionType::Script);
+
+    let completion_type = completion_type_script;
+
+    let description = take_until(end()).padded().map(|(s, _)| s.into_iter().collect());
+
+    ident.padded().then(completion_type.delimited_by(just('('), just(')')).or_not()).then_ignore(just(':')).then(description.padded()).map(|((name, completion_type), description)| OptionSpec {
+        name,
+        completion_type,
+        description: Some(description),
+    })
 }
 
 fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
@@ -104,13 +136,15 @@ mod tests {
 
 pub struct Usage {
     command: Command,
+    completions: HashMap<String, CompletionType>,
     error: Option<Error>,
 }
 
 impl Usage {
-    pub fn new(command: Command, error: Option<Error>) -> Self {
+    pub fn new(command: Command, completions: HashMap<String, CompletionType>, error: Option<Error>) -> Self {
         Self {
             command,
+            completions,
             error,
         }
     }
@@ -135,6 +169,49 @@ impl Usage {
         self.validate()?;
 
         Ok(self.command.clone().render_help().ansi().to_string())
+    }
+
+    pub fn provides_completions(&self) -> bool {
+        !self.completions.is_empty()
+    }
+
+    pub fn get_completion_type(&self, name: &str) -> Option<CompletionType> {
+        self.completions.get(name).cloned()
+    }
+
+    pub fn get_next_option_name_for_completions(&self, args: &Vec<String>) -> Option<String> {
+        let clap_args = self.command.clone().try_get_matches_from(args);
+
+        let name = match clap_args {
+            Ok(_) => None,
+            Err(e) => {
+                let mut result = None;
+
+                for (k, v) in e.context() {
+                    match k {
+                        ContextKind::InvalidArg => {
+                            match v {
+                                ContextValue::Strings(args) => {
+                                    for arg in args {
+                                        // look for first positional argument that's missing
+                                        if arg.starts_with("<") && arg.ends_with(">") {
+                                            result = Some(arg.trim_matches(|c| c == '<' || c == '>').to_owned());
+                                            break;
+                                        }
+                                    }
+                                },
+                                _ => {},
+                            }
+                        }
+                        _ => {},
+                    }
+                }
+
+                result
+            }
+        };
+
+        name
     }
 
     pub fn parse_into_kv(&self, args: &Vec<String>) -> Result<String> {
@@ -173,25 +250,45 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
         command = command.after_help(description);
     }
 
+    // TODO: make this a vec of errors
     let mut error = None;
+
+    let mut options = HashMap::<String, OptionSpec>::new();
+
+    for line in docs.options {
+        match option_parser().parse(line) {
+            Ok(option) => {
+                options.insert(option.name.clone(), option);
+            },
+            Err(e) => error = Some(Error::InvalidOptionString(e)),
+        }
+    }
 
     if let Some(line) = docs.usage {
         match usage_parser().parse(line) {
             Ok(usage_lang) => {
-                command = apply_arguments(command, usage_lang);
+                command = apply_arguments(command, usage_lang, &options);
             },
             Err(e) => error = Some(Error::InvalidUsageString(e)),
         }
     } else {
-        command = command.arg(Arg::new("args").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
+        command = command.arg(Arg::new("args").help("other arguments").trailing_var_arg(true).num_args(..).allow_hyphen_values(true));
     }
+
+    let completions: HashMap<String, CompletionType> = options.iter().filter_map(|(name, spec)| {
+        if let Some(completion_type) = &spec.completion_type {
+            Some((name.clone(), completion_type.clone()))
+        } else {
+            None
+        }
+    }).collect();
 
     // both command and error are returned because an invalid usage string doesn't prevent the
     // command from being invoked, but it should be reported to the user
-    return Usage::new(command, error);
+    return Usage::new(command, completions, error);
 }
 
-fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
+fn apply_arguments(mut command: Command, usage_lang: UsageLang, options: &HashMap<String, OptionSpec>) -> Command {
     for arg in usage_lang.arguments {
         let mut clap_arg = match arg.base {
             ArgBase::Positional(ref name) => {
@@ -213,6 +310,12 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
 
         clap_arg = clap_arg.exclusive(arg.exclusive);
         clap_arg = clap_arg.required(arg.required);
+
+        if let Some(option) = options.get(clap_arg.get_id().as_str()) {
+            if let Some(description) = &option.description {
+                clap_arg = clap_arg.help(description);
+            }
+        }
 
         command = command.arg(clap_arg);
     }

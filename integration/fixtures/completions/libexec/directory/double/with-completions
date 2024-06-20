@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
+#
+# Usage: {cmd} <option>
+# Options:
+#   option(script): Description of the option
 
-# Provide completions
-if [ "$1" = "--complete" ]; then
-  echo comp11
-  echo comp21
-  exit
-fi
+set -e
+
+echo "comp11"
+echo "comp21"

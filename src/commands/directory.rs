@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::collections::HashMap;
 
 use clap::Arg;
 
@@ -35,7 +36,7 @@ impl<'a> DirectoryCommand<'a> {
             }
         }
 
-        let usage = Usage::new(command, None);
+        let usage = Usage::new(command, HashMap::new(), None);
 
         return Self {
             names,
@@ -63,7 +64,7 @@ impl<'a> DirectoryCommand<'a> {
             }
         }
 
-        let usage = Usage::new(command, None);
+        let usage = Usage::new(command, HashMap::new(), None);
 
         return Self {
             names,

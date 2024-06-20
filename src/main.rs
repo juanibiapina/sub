@@ -91,6 +91,13 @@ fn print_error(error: Error) -> String {
             }
             message
         }
+        Error::InvalidOptionString(errors) => {
+            let mut message = "invalid option string".to_string();
+            for error in errors {
+                message.push_str(&format!("\n  {}", error));
+            }
+            message
+        }
         Error::InvalidUTF8 => "invalid UTF-8".to_string(),
         Error::NoLibexecDir => "libexec directory not found in root".to_string(),
         Error::SubCommandIoError(e) => format!("IO Error: {}", e),
@@ -111,6 +118,15 @@ fn handle_error(config: &Config, error: Error, silent: bool) -> ! {
         Error::InvalidUsageString(errors) => {
             if !silent {
                 println!("{}: invalid usage string", config.name);
+                for error in errors {
+                    println!("  {}", error);
+                }
+            }
+            exit(1);
+        }
+        Error::InvalidOptionString(errors) => {
+            if !silent {
+                println!("{}: invalid option string", config.name);
                 for error in errors {
                     println!("  {}", error);
                 }

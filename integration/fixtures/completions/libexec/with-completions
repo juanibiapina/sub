@@ -1,8 +1,29 @@
 #!/usr/bin/env bash
+#
+# Usage: {cmd} <option1> <option2>
+# Options:
+#   option1 (script): Description of option 1
+#   option2 (script): Description of option 2
 
-# Provide completions
-if [ "$1" = "--complete" ]; then
-  echo comp1
-  echo comp2
-  exit
+set -e
+
+if [[ "$_MAIN_COMPLETE" == "true" ]]; then
+  if [[ "$_MAIN_COMPLETE_ARG" == "option1" ]]; then
+    echo "comp1"
+    echo "comp2"
+
+    exit 0
+  fi
+
+  if [[ "$_MAIN_COMPLETE_ARG" == "option2" ]]; then
+    echo "comp3"
+    echo "comp4"
+
+    exit 0
+  fi
+
+  exit 201
 fi
+
+exit 202
+

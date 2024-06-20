@@ -60,6 +60,39 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn completions(&self) -> Result<i32> {
+        // new completion system
+        if self.usage.provides_completions() {
+            let name = self.usage.get_next_option_name_for_completions(&self.args);
+
+            let completion_type = match name {
+                Some(ref name) => self.usage.get_completion_type(name),
+                None => None,
+            };
+
+            match completion_type {
+                Some(usage::CompletionType::Script) => {
+                    let mut command = process::Command::new(&self.path);
+
+                    command.env(format!("_{}_ROOT", self.config.name.to_uppercase()), &self.config.root);
+                    command.env(format!("_{}_COMPLETE", self.config.name.to_uppercase()), "true");
+                    command.env(format!("_{}_COMPLETE_ARG", self.config.name.to_uppercase()), name.unwrap());
+
+                    let status = command.status().unwrap();
+
+                    return match status.code() {
+                        Some(code) => Ok(code),
+                        None => Err(Error::SubCommandInterrupted),
+                    };
+                },
+                None => {
+                    // do nothing
+                },
+            };
+
+            return Ok(0);
+        }
+
+        // old completion system
         if parser::provides_completions(&self.path) {
             let mut command = process::Command::new(&self.path);
 
@@ -73,6 +106,7 @@ impl<'a> Command for FileCommand<'a> {
                 None => Err(Error::SubCommandInterrupted),
             };
         }
+
         Ok(0)
     }
 
