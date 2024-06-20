@@ -193,6 +193,9 @@ file. The special comments are:
   Usage comment, when present, has specific syntactic rules and is used to
   parse command line arguments. See [Validating arguments](#validating-arguments)
   and [Parsing arguments](#parsing-arguments) for more information.
+- `Options:` A description of the options the script accepts. This is used to
+  display help information and generate completions. See
+  [Completions](#completions) for more details.
 - Extended documentation: Any other comment lines in this initial block will be
   considered part of the extended documentation.
 
@@ -254,6 +257,42 @@ if [[ "${args[long]}" == "true" ]]; then
   # ...
 fi
 ```
+
+## Completions
+
+`sub` automatically provides completions for subcommand names.
+
+To enable completions for positional arguments in the `Usage` comment, add an
+`Options:` comment with a list of arguments. An option must have the format:
+`name (completion_type): description`. Completion type is optional. Currently,
+the only supported completion type is `script`, which allows for dynamic
+completions like the following example:
+
+```sh
+# Usage: {cmd} <name>
+# Options:
+#   name (script): A name
+
+# check if we're being requested completions
+if [[ "$_HAT_COMPLETE" == "true" ]]; then
+  if [[ "$_HAT_COMPLETE_ARG" == "name" ]]; then
+    echo "Alice"
+    echo "Bob"
+    echo "Charlie"
+    # note that you can run any command here to generate completions
+  fi
+
+  # make sure to exit when generating completions to prevent the script from running
+  exit 0
+fi
+
+# read arguments
+declare -A args="($_HAT_ARGS)"
+
+# say hello
+echo "Hello, ${args[name]}!"
+```
+
 
 ## Nested subcommands
 
