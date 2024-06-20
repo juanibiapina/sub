@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.2.0 - 20.06.2024
+
+- Add new completions system. The old system is still supported so this isn't a
+  breaking change. The new system has priority over the old system when both
+  are present.
+
 ## v2.1.0 - 16.06.2024
 
 - Rework `--validation` flag. It now needs to come after `--` and validates any
