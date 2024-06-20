@@ -63,10 +63,14 @@ Then add it to your packages:
 
 This section explains how to set up a CLI called `hat` using `sub`.
 
-### Hello World
+### Examples
 
-For a working example, check out a [hello
+For a simple example, check out a [hello
 world](https://github.com/juanibiapina/sub/tree/master/examples/hello) project.
+
+For a complete example with lots of features, check out the
+[complete](https://github.com/juanibiapina/sub/tree/master/examples/complete)
+example project.
 
 ### As an alias
 

@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+#
+# Summary: Say hi to a person
+#
+# Usage: {cmd} <name> [--spanish] [rest]...
+#
+# Options:
+#   name (script): The person's name
+#   spanish:       Say hi in Spanish
+#
+# This is a complete command using argument parsing, completions and all types
+# of help text.
+
+if [[ "$_HAT_COMPLETE" == "true" ]]; then
+  if [[ "$_HAT_COMPLETE_ARG" == "name" ]]; then
+    echo "Alice"
+    echo "Bob"
+    echo "Charlie"
+    # note that you can run any command here to generate completions
+  fi
+
+  # make sure to exit when generating completions to prevent the script from running
+  exit 0
+fi
+
+# parse the arguments
+declare -A args="(${_HAT_ARGS})"
+
+# script logic
+
+if [ "${args[spanish]}" == "true" ]; then
+  echo "Hola ${args[name]}!"
+else
+  echo "Hi ${args[name]}!"
+fi
+
+if [ ! -z "${args[rest]}" ]; then
+  echo "Also: ${args[rest]}"
+fi
