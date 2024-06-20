@@ -3,7 +3,7 @@
 load test_helper
 
 @test "completions: without arguments, lists commands" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions
 
@@ -12,7 +12,7 @@ load test_helper
 }
 
 @test "completions: fails gracefully when command is not found" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions not-found
 
@@ -20,8 +20,8 @@ load test_helper
   assert_output ""
 }
 
-@test "completions: script: invokes command completions for first argument" {
-  fixture "completions"
+@test "completions: invokes command completions" {
+  fixture "completions-old"
 
   run main --completions with-completions
 
@@ -30,18 +30,8 @@ load test_helper
 comp2"
 }
 
-@test "completions: script: invokes command completions for second argument" {
-  fixture "completions"
-
-  run main --completions with-completions value1
-
-  assert_success
-  assert_output "comp3
-comp4"
-}
-
 @test "completions: lists nothing if command provides no completions" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions no-completions
 
@@ -50,7 +40,7 @@ comp4"
 }
 
 @test "completions: displays for directory commands" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions directory
 
@@ -59,7 +49,7 @@ comp4"
 }
 
 @test "completions: displays double nested directory commands" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions directory double
 
@@ -68,7 +58,7 @@ comp4"
 }
 
 @test "completions: displays double nested subcommands" {
-  fixture "completions"
+  fixture "completions-old"
 
   run main --completions directory double with-completions
 

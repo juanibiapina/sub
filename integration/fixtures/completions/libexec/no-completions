@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#
+# Usage: {cmd}
+
+exit 1
