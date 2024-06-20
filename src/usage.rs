@@ -5,6 +5,7 @@ use chumsky::prelude::*;
 use clap::{Command, Arg};
 
 use std::path::Path;
+use std::collections::HashMap;
 
 use crate::parser;
 use crate::error::{Error, Result};
@@ -28,6 +29,25 @@ pub struct ArgSpec {
 struct UsageLang {
     arguments: Vec<ArgSpec>,
     rest: Option<String>,
+}
+
+#[derive(Debug, PartialEq)]
+struct OptionSpec {
+    name: String,
+    description: Option<String>,
+}
+
+fn option_parser() -> impl Parser<char, OptionSpec, Error = Simple<char>> {
+    let ident = filter(|c: &char| c.is_ascii_alphabetic())
+        .chain(filter(|c: &char| c.is_ascii_alphanumeric() || *c == '_' || *c == '-').repeated())
+        .collect();
+
+    let description = take_until(end()).padded().map(|(s, _)| s.into_iter().collect());
+
+    ident.padded().then_ignore(just(':')).then(description.padded()).map(|(name, description)| OptionSpec {
+        name,
+        description: Some(description),
+    })
 }
 
 fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
@@ -173,12 +193,24 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
         command = command.after_help(description);
     }
 
+    // TODO: make this a vec of errors
     let mut error = None;
+
+    let mut options = HashMap::<String, OptionSpec>::new();
+
+    for line in docs.options {
+        match option_parser().parse(line) {
+            Ok(option) => {
+                options.insert(option.name.clone(), option);
+            },
+            Err(e) => error = Some(Error::InvalidOptionString(e)),
+        }
+    }
 
     if let Some(line) = docs.usage {
         match usage_parser().parse(line) {
             Ok(usage_lang) => {
-                command = apply_arguments(command, usage_lang);
+                command = apply_arguments(command, usage_lang, options);
             },
             Err(e) => error = Some(Error::InvalidUsageString(e)),
         }
@@ -191,7 +223,7 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
     return Usage::new(command, error);
 }
 
-fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
+fn apply_arguments(mut command: Command, usage_lang: UsageLang, options: HashMap<String, OptionSpec>) -> Command {
     for arg in usage_lang.arguments {
         let mut clap_arg = match arg.base {
             ArgBase::Positional(ref name) => {
@@ -213,6 +245,12 @@ fn apply_arguments(mut command: Command, usage_lang: UsageLang) -> Command {
 
         clap_arg = clap_arg.exclusive(arg.exclusive);
         clap_arg = clap_arg.required(arg.required);
+
+        if let Some(option) = options.get(clap_arg.get_id().as_str()) {
+            if let Some(description) = &option.description {
+                clap_arg = clap_arg.help(description);
+            }
+        }
 
         command = command.arg(clap_arg);
     }

@@ -27,12 +27,14 @@ fn extract_initial_comment_block(path: &Path) -> String {
 #[derive(PartialEq)]
 enum Mode {
     Out,
+    Options,
     Description,
 }
 
 pub struct Docs {
-    pub usage: Option<String>,
     pub summary: Option<String>,
+    pub usage: Option<String>,
+    pub options: Vec<String>,
     pub description: Option<String>,
 }
 
@@ -47,6 +49,7 @@ pub fn extract_docs(path: &Path) -> Docs {
 
     let mut summary = None;
     let mut usage = None;
+    let mut options = Vec::new();
     let mut description = Vec::new();
 
     let mut mode = Mode::Out;
@@ -69,10 +72,28 @@ pub fn extract_docs(path: &Path) -> Docs {
                 continue;
             }
 
+            if line == "# Options:" {
+                mode = Mode::Options;
+                continue;
+            }
+
             if let Some(caps) = EXTENDED_RE.captures(&line) {
                 if let Some(m) = caps.get(1) {
                     description.push(m.as_str().trim().to_owned());
                     mode = Mode::Description;
+                    continue;
+                }
+            }
+        }
+
+        if mode == Mode::Options {
+            if line == "#" {
+                mode = Mode::Out;
+            }
+
+            if let Some(caps) = INDENTED_RE.captures(&line) {
+                if let Some(m) = caps.get(1) {
+                    options.push(m.as_str().trim().to_owned());
                     continue;
                 }
             }
@@ -94,8 +115,9 @@ pub fn extract_docs(path: &Path) -> Docs {
     }
 
     Docs {
-        usage,
         summary,
+        usage,
+        options,
         description: if description.is_empty() { None } else { Some(description.join("\n")) },
     }
 }

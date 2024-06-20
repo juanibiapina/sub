@@ -14,5 +14,6 @@ pub enum Error {
     SubCommandInterrupted,
     UnknownSubCommand(String),
     InvalidUsageString(Vec<Simple<char>>),
+    InvalidOptionString(Vec<Simple<char>>),
     InvalidUTF8,
 }

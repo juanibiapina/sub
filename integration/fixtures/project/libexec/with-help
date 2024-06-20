@@ -2,7 +2,10 @@
 #
 # Summary: Command with complete help
 #
-# Usage: {cmd} [args]...
+# Usage: {cmd} <positional> [args]...
+#
+# Options:
+#   positional: A positional argument
 #
 # This is a complete test script with documentation.
 #
