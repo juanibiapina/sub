@@ -1,10 +1,11 @@
 # Sub
 
-Organize groups of scripts into documented CLIs with subcommands.
+Scripts with superpowers.
 
-`sub` is a tool designed to help organize groups of scripts into a command-line
-interface (CLI) with subcommands. It allows the dynamic creation of a CLI from
-a directory (and subdirectories) of scripts.
+`sub` is a tool for organizing scripts into a unified command-line interface.
+It allows the dynamic creation of a CLI from a directory (and subdirectories)
+of scripts with support for documentation, argument validation, and
+completions.
 
 Use the Github table of contents on the top right of this README to navigate
 the documentation.
