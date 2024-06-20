@@ -26,13 +26,16 @@ the documentation.
 
 ## Installation
 
-### Homebrew
+<details>
+<summary>Homebrew</summary>
 
 ```sh
 brew install juanibiapina/tap/sub
 ```
+</details>
 
-### Nix with Flakes
+<details>
+<summary>Nix with Flakes (binary install)</summary>
 
 Add sub to your flake inputs:
 
@@ -59,6 +62,7 @@ Then add it to your packages:
   ];
 }
 ```
+</details>
 
 ## Setup
 
