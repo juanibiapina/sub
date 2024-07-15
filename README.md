@@ -7,8 +7,33 @@ It allows the dynamic creation of a CLI from a directory (and subdirectories)
 of scripts with support for documentation, argument validation, and
 completions.
 
-Use the Github table of contents on the top right of this README to navigate
-the documentation.
+## Table of Contents
+
+<!-- vim-markdown-toc GFM -->
+
+* [Key features](#key-features)
+* [Demo](#demo)
+* [Installation](#installation)
+* [Setup](#setup)
+  * [Examples](#examples)
+  * [As an alias](#as-an-alias)
+  * [As an executable](#as-an-executable)
+* [Usage](#usage)
+* [Documenting commands](#documenting-commands)
+* [Validating arguments](#validating-arguments)
+* [Parsing arguments](#parsing-arguments)
+* [Completions](#completions)
+* [Nested subcommands](#nested-subcommands)
+* [Aliases](#aliases)
+* [Sharing code between scripts](#sharing-code-between-scripts)
+* [Caching](#caching)
+* [Migrating to Sub 2.x](#migrating-to-sub-2x)
+  * [change --bin to --executable](#change---bin-to---executable)
+  * [Usage comments](#usage-comments)
+  * [Help, commands and completions](#help-commands-and-completions)
+* [Inspiration](#inspiration)
+
+<!-- vim-markdown-toc -->
 
 ## Key features
 
