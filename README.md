@@ -1,5 +1,10 @@
 # Sub
 
+![GitHub top language](https://img.shields.io/github/languages/top/juanibiapina/sub)
+![GitHub branch check runs](https://img.shields.io/github/check-runs/juanibiapina/sub/master)
+![GitHub Release](https://img.shields.io/github/v/release/juanibiapina/sub)
+![GitHub License](https://img.shields.io/github/license/juanibiapina/sub)
+
 Scripts with superpowers.
 
 `sub` is a tool for organizing scripts into a unified command-line interface.
