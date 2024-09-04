@@ -69,9 +69,9 @@
                   read -cA words
 
                   if [ "\''${#words}" -eq 2 ]; then
-                    completions="\$(${cmd} completions)"
+                    completions="\$(${cmd} --completions)"
                   else
-                    completions="\$(${cmd} completions "\''${words[@]:1:-1}")"
+                    completions="\$(${cmd} --completions "\''${words[@]:1:-1}")"
                   fi
 
                   reply=("\''${(ps:\n:)completions}")
