@@ -4,19 +4,9 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-
-    devenv = {
-      url = "github:cachix/devenv";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  nixConfig = {
-    extra-trusted-public-keys = "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=";
-    extra-substituters = "https://devenv.cachix.org";
-  };
-
-  outputs = { self, nixpkgs, flake-utils, devenv, ... } @ inputs:
+  outputs = { self, nixpkgs, flake-utils, ... } @ inputs:
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
       rec {
@@ -85,24 +75,6 @@
         apps = {
           default = apps.sub;
           sub = flake-utils.lib.mkApp { drv = packages.sub; };
-        };
-
-        devShells = {
-          default = devenv.lib.mkShell {
-            inherit inputs pkgs;
-
-            modules = [
-              {
-                packages = with pkgs; [
-                  asciinema
-                  bats
-                  doitlive
-                ];
-
-                languages.rust.enable = true;
-              }
-            ];
-          };
         };
       });
 }
