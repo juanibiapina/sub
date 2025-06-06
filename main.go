@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -321,12 +322,266 @@ type ValidationError struct {
 	Message string
 }
 
+// UsageInfo represents parsed usage information from a script
+type UsageInfo struct {
+	Summary string
+	Usage   string
+	Help    string
+	Args    []ArgSpec
+	Rest    string
+}
+
+// ArgSpec represents an argument specification
+type ArgSpec struct {
+	Name      string
+	Type      string // "positional", "short", "long"
+	Required  bool
+	HasValue  bool
+	ValueName string
+	Exclusive bool
+}
+
+// extractUsageFromFile reads a script file and extracts usage information
+func extractUsageFromFile(path string) (*UsageInfo, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	info := &UsageInfo{}
+	inCommentBlock := false
+	
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		
+		// Skip shebang
+		if strings.HasPrefix(line, "#!") {
+			continue
+		}
+		
+		// Check if we're in a comment block
+		if strings.HasPrefix(line, "#") {
+			inCommentBlock = true
+			line = strings.TrimSpace(line[1:]) // Remove #
+			
+			if strings.HasPrefix(line, "Summary:") {
+				info.Summary = strings.TrimSpace(line[8:])
+			} else if strings.HasPrefix(line, "Usage:") {
+				info.Usage = strings.TrimSpace(line[6:])
+				info.Args = parseUsageString(info.Usage)
+			} else if line != "" {
+				// Extended help text
+				if info.Help != "" {
+					info.Help += "\n"
+				}
+				info.Help += line
+			}
+		} else if inCommentBlock && line == "" {
+			// Empty line continues comment block
+			continue
+		} else {
+			// Non-comment line breaks the comment block
+			break
+		}
+	}
+
+	return info, scanner.Err()
+}
+
+// parseUsageString parses a usage string and extracts argument specifications
+func parseUsageString(usage string) []ArgSpec {
+	var args []ArgSpec
+	
+	// Split the usage line by spaces and process each token
+	tokens := strings.Fields(usage)
+	
+	for _, token := range tokens {
+		// Skip {cmd}
+		if token == "{cmd}" {
+			continue
+		}
+		
+		if strings.HasPrefix(token, "<") && strings.HasSuffix(token, ">") {
+			// Required positional: <name>
+			name := token[1 : len(token)-1]
+			args = append(args, ArgSpec{
+				Name:     name,
+				Type:     "positional",
+				Required: true,
+			})
+		} else if strings.HasPrefix(token, "[") && strings.HasSuffix(token, "]") {
+			// Optional something: [...]
+			inner := token[1 : len(token)-1]
+			if strings.HasSuffix(inner, "...") {
+				// Rest args: [args]...
+				name := inner[:len(inner)-3]
+				args = append(args, ArgSpec{
+					Name: name,
+					Type: "rest",
+				})
+			} else if strings.HasPrefix(inner, "-") && !strings.HasPrefix(inner, "--") {
+				// Short flag: [-u]
+				args = append(args, ArgSpec{
+					Name:     inner,
+					Type:     "short",
+					Required: false,
+				})
+			} else if strings.HasPrefix(inner, "--") {
+				if strings.Contains(inner, "=") {
+					// Long flag with value: [--value=VALUE]
+					parts := strings.SplitN(inner, "=", 2)
+					args = append(args, ArgSpec{
+						Name:      parts[0],
+						Type:      "long",
+						Required:  false,
+						HasValue:  true,
+						ValueName: parts[1],
+					})
+				} else {
+					// Long flag: [--long]
+					args = append(args, ArgSpec{
+						Name:     inner,
+						Type:     "long",
+						Required: false,
+					})
+				}
+			} else {
+				// Optional positional: [name]
+				args = append(args, ArgSpec{
+					Name:     inner,
+					Type:     "positional",
+					Required: false,
+				})
+			}
+		} else if strings.HasPrefix(token, "[") && strings.HasSuffix(token, "]!") {
+			// Exclusive flag: [--exclusive]!
+			inner := token[1 : len(token)-2] // Remove [ and ]!
+			args = append(args, ArgSpec{
+				Name:      inner,
+				Type:      "long",
+				Required:  false,
+				Exclusive: true,
+			})
+		} else if strings.HasPrefix(token, "--") && strings.Contains(token, "=") {
+			// Required long flag with value: --value=VALUE
+			parts := strings.SplitN(token, "=", 2)
+			args = append(args, ArgSpec{
+				Name:      parts[0],
+				Type:      "long",
+				Required:  true,
+				HasValue:  true,
+				ValueName: parts[1],
+			})
+		}
+	}
+	
+	return args
+}
+
+// parseArgsWithUsage parses command line arguments according to usage specification
+func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
+	result := make(map[string]string)
+	
+	// Initialize default values for flags
+	for _, spec := range specs {
+		if spec.Type == "short" || spec.Type == "long" {
+			key := spec.Name
+			if spec.Type == "short" {
+				key = key[1:] // Remove -
+			} else {
+				key = key[2:] // Remove --
+			}
+			if !spec.HasValue {
+				result[key] = "false"
+			}
+		}
+	}
+	
+	// Get positional specs in order
+	positionalSpecs := []ArgSpec{}
+	var restSpec *ArgSpec
+	for _, spec := range specs {
+		if spec.Type == "positional" {
+			positionalSpecs = append(positionalSpecs, spec)
+		} else if spec.Type == "rest" {
+			restSpec = &spec
+		}
+	}
+	
+	// Parse arguments
+	i := 0
+	positionalIndex := 0
+	var restArgs []string
+	
+	for i < len(args) {
+		arg := args[i]
+		processed := false
+		
+		if strings.HasPrefix(arg, "--") {
+			// Long flag
+			parts := strings.SplitN(arg, "=", 2)
+			flagName := parts[0]
+			
+			// Find matching spec
+			for _, spec := range specs {
+				if spec.Type == "long" && spec.Name == flagName {
+					key := spec.Name[2:] // Remove --
+					if spec.HasValue {
+						if len(parts) > 1 {
+							result[key] = parts[1]
+						} else if i+1 < len(args) {
+							result[key] = args[i+1]
+							i++
+						}
+					} else {
+						result[key] = "true"
+					}
+					processed = true
+					break
+				}
+			}
+		} else if strings.HasPrefix(arg, "-") && len(arg) == 2 {
+			// Short flag
+			for _, spec := range specs {
+				if spec.Type == "short" && spec.Name == arg {
+					key := spec.Name[1:] // Remove -
+					result[key] = "true"
+					processed = true
+					break
+				}
+			}
+		}
+		
+		if !processed {
+			// Not a recognized flag, treat as positional or rest
+			if positionalIndex < len(positionalSpecs) {
+				spec := positionalSpecs[positionalIndex]
+				result[spec.Name] = arg
+				positionalIndex++
+			} else if restSpec != nil {
+				// Goes to rest args
+				restArgs = append(restArgs, arg)
+			}
+		}
+		i++
+	}
+	
+	// Set rest args if we have them
+	if len(restArgs) > 0 && restSpec != nil {
+		result[restSpec.Name] = strings.Join(restArgs, " ")
+	}
+	
+	return result
+}
+
 func findSubcommand(config *Config, commandsWithArgs []string) (Command, error) {
 	libexecPath := config.LibexecPath()
 	
 	// Check if libexec directory exists
 	if info, err := os.Stat(libexecPath); err != nil || !info.IsDir() {
-		return nil, SubError{Type: config.Name, Message: "libexec directory not found in root"}
+		return nil, SubError{Type: "", Message: fmt.Sprintf("%s: libexec directory not found in root", config.Name)}
 	}
 
 	if len(commandsWithArgs) == 0 {
@@ -372,12 +627,7 @@ func findSubcommand(config *Config, commandsWithArgs []string) (Command, error) 
 				continue
 			} else {
 				// File command
-				return &FileCommand{
-					names:  names,
-					path:   nextPath,
-					args:   remaining,
-					config: config,
-				}, nil
+				return NewFileCommand(names, nextPath, remaining, config), nil
 			}
 		}
 	}
@@ -458,12 +708,7 @@ func (d *DirectoryCommand) Subcommands() []Command {
 			// Check if file is executable
 			if info, err := os.Stat(fullPath); err == nil {
 				if info.Mode()&0111 != 0 {
-					commands = append(commands, &FileCommand{
-						names:  names,
-						path:   fullPath,
-						args:   []string{},
-						config: d.config,
-					})
+					commands = append(commands, NewFileCommand(names, fullPath, []string{}, d.config))
 				}
 			}
 		}
@@ -494,10 +739,22 @@ func (d *DirectoryCommand) Validate() []ValidationError {
 
 // FileCommand implements Command for executable files
 type FileCommand struct {
-	names  []string
-	path   string
-	args   []string
-	config *Config
+	names     []string
+	path      string
+	args      []string
+	config    *Config
+	usageInfo *UsageInfo
+}
+
+func NewFileCommand(names []string, path string, args []string, config *Config) *FileCommand {
+	usageInfo, _ := extractUsageFromFile(path)
+	return &FileCommand{
+		names:     names,
+		path:      path,
+		args:      args,
+		config:    config,
+		usageInfo: usageInfo,
+	}
 }
 
 func (f *FileCommand) Name() string {
@@ -505,12 +762,23 @@ func (f *FileCommand) Name() string {
 }
 
 func (f *FileCommand) Summary() string {
-	// TODO: Extract summary from file comments
+	if f.usageInfo != nil {
+		return f.usageInfo.Summary
+	}
 	return ""
 }
 
 func (f *FileCommand) Usage() (string, error) {
-	// TODO: Extract usage from file comments
+	if f.usageInfo != nil && f.usageInfo.Usage != "" {
+		// Replace {cmd} with actual command
+		cmdName := f.config.Name
+		if len(f.names) > 0 {
+			cmdName = f.config.Name + " " + strings.Join(f.names, " ")
+		}
+		usage := strings.Replace(f.usageInfo.Usage, "{cmd}", cmdName, -1)
+		return fmt.Sprintf("Usage: %s", usage), nil
+	}
+	
 	if len(f.names) == 0 {
 		return fmt.Sprintf("Usage: %s [args]...", f.config.Name), nil
 	}
@@ -522,7 +790,13 @@ func (f *FileCommand) Help() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return usage, nil
+	
+	help := usage
+	if f.usageInfo != nil && f.usageInfo.Help != "" {
+		help += "\n\n" + f.usageInfo.Help
+	}
+	
+	return help, nil
 }
 
 func (f *FileCommand) Subcommands() []Command {
@@ -539,9 +813,21 @@ func (f *FileCommand) Invoke() (int, error) {
 	envName := fmt.Sprintf("_%s_ROOT", strings.ToUpper(f.config.Name))
 	os.Setenv(envName, f.config.Root)
 	
-	// TODO: Parse arguments and set _MAIN_ARGS
+	// Parse arguments according to usage and set environment variable
 	argsEnvName := fmt.Sprintf("_%s_ARGS", strings.ToUpper(f.config.Name))
-	os.Setenv(argsEnvName, strings.Join(f.args, " "))
+	if f.usageInfo != nil && len(f.usageInfo.Args) > 0 {
+		parsedArgs := parseArgsWithUsage(f.args, f.usageInfo.Args)
+		
+		// Format as key-value pairs for the environment variable
+		var argPairs []string
+		for key, value := range parsedArgs {
+			argPairs = append(argPairs, fmt.Sprintf(`%s "%s"`, key, value))
+		}
+		os.Setenv(argsEnvName, strings.Join(argPairs, " "))
+	} else {
+		// No usage info, just pass raw arguments
+		os.Setenv(argsEnvName, strings.Join(f.args, " "))
+	}
 	
 	// Execute the script
 	cmd := exec.Command(f.path, f.args...)
@@ -566,11 +852,7 @@ func (f *FileCommand) Validate() []ValidationError {
 func handleError(config *Config, err error, silent bool) {
 	if !silent {
 		if subErr, ok := err.(SubError); ok {
-			if subErr.Type == config.Name {
-				fmt.Fprintf(os.Stderr, "%s\n", subErr.Message)
-			} else {
-				fmt.Fprintf(os.Stderr, "%s: %s\n", subErr.Type, subErr.Message)
-			}
+			fmt.Fprintf(os.Stderr, "%s\n", subErr.Message)
 		} else {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", config.Name, err)
 		}
