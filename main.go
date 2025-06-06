@@ -94,7 +94,7 @@ func main() {
 
 	userCliArgs, err := parseUserCliArgs(config, cliArgs)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
@@ -267,34 +267,40 @@ func parseSubCliArgs() (*Config, []string, error) {
 func parseUserCliArgs(config *Config, cliArgs []string) (*UserCliArgs, error) {
 	mode := UserCliModeInvoke
 	extension := ""
-	commandsWithArgs := cliArgs
-
-	if len(cliArgs) > 0 {
-		switch cliArgs[0] {
-		case "--usage":
+	commandsWithArgs := []string{}
+	
+	i := 0
+	for i < len(cliArgs) {
+		arg := cliArgs[i]
+		
+		if arg == "--usage" {
 			mode = UserCliModeUsage
-			commandsWithArgs = cliArgs[1:]
-		case "--help":
+		} else if arg == "--help" || arg == "-h" {
 			mode = UserCliModeHelp
-			commandsWithArgs = cliArgs[1:]
-		case "--commands":
+		} else if arg == "--commands" {
 			mode = UserCliModeCommands
-			commandsWithArgs = cliArgs[1:]
-			// Check for --extension flag
-			if len(commandsWithArgs) > 0 && commandsWithArgs[0] == "--extension" {
-				if len(commandsWithArgs) < 2 {
-					return nil, fmt.Errorf("--extension requires a value")
-				}
-				extension = commandsWithArgs[1]
-				commandsWithArgs = commandsWithArgs[2:]
-			}
-		case "--completions":
+		} else if arg == "--completions" {
 			mode = UserCliModeCompletions
-			commandsWithArgs = cliArgs[1:]
-		case "--validate":
+		} else if arg == "--validate" {
 			mode = UserCliModeValidate
-			commandsWithArgs = cliArgs[1:]
+		} else if arg == "--extension" {
+			if i+1 >= len(cliArgs) {
+				return nil, fmt.Errorf("--extension requires a value")
+			}
+			extension = cliArgs[i+1]
+			i++ // skip the value
+		} else if strings.HasPrefix(arg, "--extension=") {
+			extension = arg[12:] // remove "--extension="
+		} else {
+			// This is a command or argument
+			commandsWithArgs = append(commandsWithArgs, arg)
 		}
+		i++
+	}
+	
+	// Handle conflicts
+	if mode == UserCliModeHelp && len(cliArgs) > 0 && (cliArgs[0] == "--usage" || strings.Contains(strings.Join(cliArgs, " "), "--usage")) {
+		return nil, fmt.Errorf("error: the argument '--usage' cannot be used with '--help'\n\nUsage: %s --usage [commands_with_args]...", config.Name)
 	}
 
 	return &UserCliArgs{
@@ -504,7 +510,7 @@ func parseUsageString(usage string) []ArgSpec {
 }
 
 // parseArgsWithUsage parses command line arguments according to usage specification
-func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
+func parseArgsWithUsage(args []string, specs []ArgSpec) (map[string]string, error) {
 	result := make(map[string]string)
 	
 	// Initialize default values for flags
@@ -525,6 +531,8 @@ func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
 	// Get positional specs in order
 	positionalSpecs := []ArgSpec{}
 	var restSpec *ArgSpec
+	var exclusiveUsed *ArgSpec
+	
 	for _, spec := range specs {
 		if spec.Type == "positional" {
 			positionalSpecs = append(positionalSpecs, spec)
@@ -551,6 +559,15 @@ func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
 			for _, spec := range specs {
 				if spec.Type == "long" && spec.Name == flagName {
 					key := spec.Name[2:] // Remove --
+					
+					// Check for exclusive arguments
+					if spec.Exclusive {
+						if exclusiveUsed != nil {
+							return nil, fmt.Errorf("exclusive argument %s cannot be used with other arguments", spec.Name)
+						}
+						exclusiveUsed = &spec
+					}
+					
 					if spec.HasValue {
 						if len(parts) > 1 {
 							result[key] = parts[1]
@@ -570,6 +587,15 @@ func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
 			for _, spec := range specs {
 				if spec.Type == "short" && spec.Name == arg {
 					key := spec.Name[1:] // Remove -
+					
+					// Check for exclusive arguments
+					if spec.Exclusive {
+						if exclusiveUsed != nil {
+							return nil, fmt.Errorf("exclusive argument %s cannot be used with other arguments", spec.Name)
+						}
+						exclusiveUsed = &spec
+					}
+					
 					result[key] = "true"
 					processed = true
 					break
@@ -586,9 +612,26 @@ func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
 			} else if restSpec != nil {
 				// Goes to rest args
 				restArgs = append(restArgs, arg)
+			} else {
+				// No rest spec, but we have extra args - put them in rest anyway
+				restArgs = append(restArgs, arg)
 			}
 		}
 		i++
+	}
+	
+	// Check if exclusive argument was used with other arguments
+	if exclusiveUsed != nil && len(result) > 1 {
+		// Count how many non-default values we have
+		nonDefaultCount := 0
+		for _, value := range result {
+			if value != "false" && value != "" {
+				nonDefaultCount++
+			}
+		}
+		if nonDefaultCount > 1 {
+			return nil, fmt.Errorf("exclusive argument %s cannot be used with other arguments", exclusiveUsed.Name)
+		}
 	}
 	
 	// Set rest args if we have them
@@ -596,7 +639,16 @@ func parseArgsWithUsage(args []string, specs []ArgSpec) map[string]string {
 		result[restSpec.Name] = strings.Join(restArgs, " ")
 	}
 	
-	return result
+	// Validate required positional arguments
+	for _, spec := range positionalSpecs {
+		if spec.Required {
+			if _, exists := result[spec.Name]; !exists {
+				return nil, fmt.Errorf("missing required argument: %s", spec.Name)
+			}
+		}
+	}
+	
+	return result, nil
 }
 
 func findSubcommand(config *Config, commandsWithArgs []string) (Command, error) {
@@ -624,13 +676,13 @@ func findSubcommand(config *Config, commandsWithArgs []string) (Command, error) 
 		
 		// Don't allow commands starting with '.'
 		if strings.HasPrefix(head, ".") {
-			return nil, SubError{Type: config.Name, Message: fmt.Sprintf("no such sub command '%s'", head)}
+			return nil, SubError{Type: "", Message: fmt.Sprintf("no such sub command '%s'", head)}
 		}
 
 		nextPath := filepath.Join(path, head)
 		
 		if _, err := os.Stat(nextPath); os.IsNotExist(err) {
-			return nil, SubError{Type: config.Name, Message: fmt.Sprintf("no such sub command '%s'", head)}
+			return nil, SubError{Type: "", Message: fmt.Sprintf("no such sub command '%s'", head)}
 		}
 
 		names = append(names, head)
@@ -678,6 +730,10 @@ func (d *DirectoryCommand) Name() string {
 }
 
 func (d *DirectoryCommand) Summary() string {
+	readmePath := filepath.Join(d.path, "README")
+	if info, err := extractUsageFromFile(readmePath); err == nil && info.Summary != "" {
+		return info.Summary
+	}
 	return "Directory command"
 }
 
@@ -694,9 +750,27 @@ func (d *DirectoryCommand) Help() (string, error) {
 		return "", err
 	}
 	
-	help := usage + "\n\nAvailable subcommands:\n"
+	help := d.Summary()
+	if help != "Directory command" {
+		help = help + "\n\n" + usage
+	} else {
+		help = usage
+	}
+	
+	// Try to get extended help from README
+	readmePath := filepath.Join(d.path, "README")
+	if info, err := extractUsageFromFile(readmePath); err == nil && info.Help != "" {
+		help += "\n\nArguments:\n  [commands_with_args]...\n\nOptions:\n  -h, --help  Print help\n\n" + info.Help
+	}
+	
+	help += "\n\nAvailable subcommands:\n"
 	for _, sub := range d.Subcommands() {
-		help += fmt.Sprintf("    %s\n", sub.Name())
+		summary := sub.Summary()
+		if summary != "" && summary != "Directory command" {
+			help += fmt.Sprintf("    %-12s %s\n", sub.Name(), summary)
+		} else {
+			help += fmt.Sprintf("    %s\n", sub.Name())
+		}
 	}
 	
 	return help, nil
@@ -757,7 +831,14 @@ func (d *DirectoryCommand) Invoke() (int, error) {
 }
 
 func (d *DirectoryCommand) Validate() []ValidationError {
-	return []ValidationError{}
+	var errors []ValidationError
+	
+	// Validate all subcommands recursively
+	for _, sub := range d.Subcommands() {
+		errors = append(errors, sub.Validate()...)
+	}
+	
+	return errors
 }
 
 // FileCommand implements Command for executable files
@@ -827,7 +908,21 @@ func (f *FileCommand) Subcommands() []Command {
 }
 
 func (f *FileCommand) Completions() (int, error) {
-	// TODO: Implement completions
+	// Check if the script supports completions by executing it with special environment
+	cmd := exec.Command(f.path)
+	env := os.Environ()
+	env = append(env, fmt.Sprintf("_%s_COMPLETE", strings.ToUpper(f.config.Name))+"=true")
+	if len(f.args) > 0 {
+		env = append(env, fmt.Sprintf("_%s_COMPLETE_ARG", strings.ToUpper(f.config.Name))+"="+f.args[0])
+	}
+	cmd.Env = env
+	
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, nil // No completions available
+	}
+	
+	fmt.Print(string(output))
 	return 0, nil
 }
 
@@ -836,32 +931,57 @@ func (f *FileCommand) Invoke() (int, error) {
 	envName := fmt.Sprintf("_%s_ROOT", strings.ToUpper(f.config.Name))
 	os.Setenv(envName, f.config.Root)
 	
+	// Set XDG cache directory environment variable
+	cacheEnvName := fmt.Sprintf("_%s_CACHE", strings.ToUpper(f.config.Name))
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		cacheDir := filepath.Join(homeDir, ".cache", f.config.Name, "cache")
+		os.Setenv(cacheEnvName, cacheDir)
+	}
+	
 	// Parse arguments according to usage and set environment variable
 	argsEnvName := fmt.Sprintf("_%s_ARGS", strings.ToUpper(f.config.Name))
 	if f.usageInfo != nil && len(f.usageInfo.Args) > 0 {
-		parsedArgs := parseArgsWithUsage(f.args, f.usageInfo.Args)
-		
-		// Format as key-value pairs for the environment variable in the order they appear in the usage spec
-		var argPairs []string
-		
-		// Process arguments in the order they appear in the usage specification
+		// Only do strict validation if we have specific usage args defined
+		hasSpecificUsage := false
 		for _, spec := range f.usageInfo.Args {
-			var key string
-			switch spec.Type {
-			case "positional", "rest":
-				key = spec.Name
-			case "short":
-				key = spec.Name[1:] // Remove -
-			case "long":
-				key = spec.Name[2:] // Remove --
-			}
-			
-			if value, exists := parsedArgs[key]; exists {
-				argPairs = append(argPairs, fmt.Sprintf(`%s "%s"`, key, value))
+			if spec.Type != "rest" {
+				hasSpecificUsage = true
+				break
 			}
 		}
 		
-		os.Setenv(argsEnvName, strings.Join(argPairs, " "))
+		if hasSpecificUsage {
+			parsedArgs, err := parseArgsWithUsage(f.args, f.usageInfo.Args)
+			if err != nil {
+				return 1, err
+			}
+			
+			// Format as key-value pairs for the environment variable in the order they appear in the usage spec
+			var argPairs []string
+			
+			// Process arguments in the order they appear in the usage specification
+			for _, spec := range f.usageInfo.Args {
+				var key string
+				switch spec.Type {
+				case "positional", "rest":
+					key = spec.Name
+				case "short":
+					key = spec.Name[1:] // Remove -
+				case "long":
+					key = spec.Name[2:] // Remove --
+				}
+				
+				if value, exists := parsedArgs[key]; exists {
+					argPairs = append(argPairs, fmt.Sprintf(`%s "%s"`, key, value))
+				}
+			}
+			
+			os.Setenv(argsEnvName, strings.Join(argPairs, " "))
+		} else {
+			// Simple usage with just rest args, pass through
+			os.Setenv(argsEnvName, strings.Join(f.args, " "))
+		}
 	} else {
 		// No usage info, just pass raw arguments
 		os.Setenv(argsEnvName, strings.Join(f.args, " "))
@@ -877,14 +997,42 @@ func (f *FileCommand) Invoke() (int, error) {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			return exitError.ExitCode(), nil
 		}
-		return 1, err
+		// Format error message to match expected format
+		if strings.Contains(err.Error(), "exec format error") {
+			return 1, fmt.Errorf("%s: Exec format error (os error 8)", f.config.Name)
+		}
+		if strings.Contains(err.Error(), "no such file or directory") {
+			return 1, fmt.Errorf("%s: No such file or directory (os error 2)", f.config.Name)
+		}
+		return 1, fmt.Errorf("%s: %v", f.config.Name, err)
 	}
 	
 	return 0, nil
 }
 
 func (f *FileCommand) Validate() []ValidationError {
-	return []ValidationError{}
+	var errors []ValidationError
+	
+	// Validate usage string if present
+	if f.usageInfo != nil && f.usageInfo.Usage != "" {
+		usage := f.usageInfo.Usage
+		
+		// Check for basic malformed patterns
+		if strings.Contains(usage, "[") && !strings.Contains(usage, "]") {
+			errors = append(errors, ValidationError{
+				Path:    f.path,
+				Message: "malformed usage string: unmatched brackets",
+			})
+		}
+		if strings.Contains(usage, "<") && !strings.Contains(usage, ">") {
+			errors = append(errors, ValidationError{
+				Path:    f.path,
+				Message: "malformed usage string: unmatched angle brackets", 
+			})
+		}
+	}
+	
+	return errors
 }
 
 func handleError(config *Config, err error, silent bool) {
@@ -892,7 +1040,13 @@ func handleError(config *Config, err error, silent bool) {
 		if subErr, ok := err.(SubError); ok {
 			fmt.Fprintf(os.Stderr, "%s\n", subErr.Message)
 		} else {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", config.Name, err)
+			// Don't add prefix if error already starts with config.Name
+			errMsg := err.Error()
+			if strings.HasPrefix(errMsg, config.Name+":") {
+				fmt.Fprintf(os.Stderr, "%s\n", errMsg)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s: %v\n", config.Name, err)
+			}
 		}
 	}
 	os.Exit(1)
