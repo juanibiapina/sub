@@ -397,9 +397,13 @@ func parseUsageString(usage string) []ArgSpec {
 	// Split the usage line by spaces and process each token
 	tokens := strings.Fields(usage)
 	
-	for _, token := range tokens {
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+		
 		// Skip {cmd}
 		if token == "{cmd}" {
+			i++
 			continue
 		}
 		
@@ -411,11 +415,28 @@ func parseUsageString(usage string) []ArgSpec {
 				Type:     "positional",
 				Required: true,
 			})
+		} else if strings.HasPrefix(token, "[") && strings.Contains(token, "]...") {
+			// Rest args: [args]...
+			inner := token[1:strings.Index(token, "]")]
+			args = append(args, ArgSpec{
+				Name: inner,
+				Type: "rest",
+			})
 		} else if strings.HasPrefix(token, "[") && strings.HasSuffix(token, "]") {
 			// Optional something: [...]
 			inner := token[1 : len(token)-1]
-			if strings.HasSuffix(inner, "...") {
+			
+			// Check if the next token is "..." to handle [args]...
+			if i+1 < len(tokens) && tokens[i+1] == "..." {
 				// Rest args: [args]...
+				args = append(args, ArgSpec{
+					Name: inner,
+					Type: "rest",
+				})
+				// Skip the "..." token
+				i++
+			} else if strings.HasSuffix(inner, "...") {
+				// Rest args: [args...] (alternative format)
 				name := inner[:len(inner)-3]
 				args = append(args, ArgSpec{
 					Name: name,
@@ -475,6 +496,8 @@ func parseUsageString(usage string) []ArgSpec {
 				ValueName: parts[1],
 			})
 		}
+		
+		i++
 	}
 	
 	return args
@@ -818,11 +841,26 @@ func (f *FileCommand) Invoke() (int, error) {
 	if f.usageInfo != nil && len(f.usageInfo.Args) > 0 {
 		parsedArgs := parseArgsWithUsage(f.args, f.usageInfo.Args)
 		
-		// Format as key-value pairs for the environment variable
+		// Format as key-value pairs for the environment variable in the order they appear in the usage spec
 		var argPairs []string
-		for key, value := range parsedArgs {
-			argPairs = append(argPairs, fmt.Sprintf(`%s "%s"`, key, value))
+		
+		// Process arguments in the order they appear in the usage specification
+		for _, spec := range f.usageInfo.Args {
+			var key string
+			switch spec.Type {
+			case "positional", "rest":
+				key = spec.Name
+			case "short":
+				key = spec.Name[1:] // Remove -
+			case "long":
+				key = spec.Name[2:] // Remove --
+			}
+			
+			if value, exists := parsedArgs[key]; exists {
+				argPairs = append(argPairs, fmt.Sprintf(`%s "%s"`, key, value))
+			}
 		}
+		
 		os.Setenv(argsEnvName, strings.Join(argPairs, " "))
 	} else {
 		// No usage info, just pass raw arguments
