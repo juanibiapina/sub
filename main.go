@@ -358,6 +358,9 @@ func extractUsageFromFile(path string) (*UsageInfo, error) {
 	scanner := bufio.NewScanner(file)
 	info := &UsageInfo{}
 	inCommentBlock := false
+	inOptionsSection := false
+	var helpLines []string
+	optionDescriptions := make(map[string]string)
 	
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -378,26 +381,35 @@ func extractUsageFromFile(path string) (*UsageInfo, error) {
 				info.Usage = strings.TrimSpace(line[6:])
 				info.Args = parseUsageString(info.Usage)
 			} else if strings.HasPrefix(line, "Options:") {
-				// Parse options section for completion info
-				continue
+				inOptionsSection = true
 			} else if strings.Contains(line, "(`") && strings.Contains(line, "`)") {
 				// Parse backtick completion: option (`echo itworks`): Description
 				start := strings.Index(line, "(`")
 				end := strings.Index(line, "`)")
 				if start != -1 && end > start {
 					completion := line[start+2 : end]
-					// Store this completion command for later use
-					if info.Help != "" {
-						info.Help += "\n"
-					}
-					info.Help += "COMPLETION:" + completion
+					helpLines = append(helpLines, "COMPLETION:"+completion)
+				}
+			} else if inOptionsSection && strings.Contains(line, ":") && strings.TrimSpace(line) != "" {
+				// Option description - store separately
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) == 2 {
+					key := strings.TrimSpace(parts[0])
+					value := strings.TrimSpace(parts[1])
+					optionDescriptions[key] = value
 				}
 			} else if line != "" {
-				// Extended help text
-				if info.Help != "" {
-					info.Help += "\n"
+				// General help text
+				if !inOptionsSection {
+					helpLines = append(helpLines, line)
+				} else {
+					// We're past options section
+					inOptionsSection = false
+					helpLines = append(helpLines, line)
 				}
-				info.Help += line
+			} else if inOptionsSection {
+				// Empty line after options section - end options
+				inOptionsSection = false
 			}
 		} else if inCommentBlock && line == "" {
 			// Empty line continues comment block
@@ -407,7 +419,16 @@ func extractUsageFromFile(path string) (*UsageInfo, error) {
 			break
 		}
 	}
-
+	
+	info.Help = strings.Join(helpLines, "\n")
+	
+	// Store option descriptions in a way the Help method can access them
+	if len(optionDescriptions) > 0 {
+		for key, value := range optionDescriptions {
+			info.Help += "\nOPTION:" + key + ":" + value
+		}
+	}
+	
 	return info, scanner.Err()
 }
 
@@ -691,13 +712,13 @@ func findSubcommand(config *Config, commandsWithArgs []string) (Command, error) 
 		
 		// Don't allow commands starting with '.'
 		if strings.HasPrefix(head, ".") {
-			return nil, SubError{Type: "", Message: fmt.Sprintf("no such sub command '%s'", head)}
+			return nil, SubError{Type: config.Name, Message: fmt.Sprintf("no such sub command '%s'", head)}
 		}
 
 		nextPath := filepath.Join(path, head)
 		
 		if _, err := os.Stat(nextPath); os.IsNotExist(err) {
-			return nil, SubError{Type: "", Message: fmt.Sprintf("no such sub command '%s'", head)}
+			return nil, SubError{Type: config.Name, Message: fmt.Sprintf("no such sub command '%s'", head)}
 		}
 
 		names = append(names, head)
@@ -754,41 +775,73 @@ func (d *DirectoryCommand) Summary() string {
 
 func (d *DirectoryCommand) Usage() (string, error) {
 	if len(d.names) == 0 {
-		return fmt.Sprintf("Usage: %s [args]...", d.config.Name), nil
+		return fmt.Sprintf("Usage: %s [commands_with_args]...", d.config.Name), nil
 	}
-	return fmt.Sprintf("Usage: %s %s [args]...", d.config.Name, strings.Join(d.names, " ")), nil
+	return fmt.Sprintf("Usage: %s %s [commands_with_args]...", d.config.Name, strings.Join(d.names, " ")), nil
 }
 
 func (d *DirectoryCommand) Help() (string, error) {
-	usage, err := d.Usage()
-	if err != nil {
-		return "", err
+	var help strings.Builder
+	
+	// Add summary
+	summary := d.Summary()
+	if summary != "Directory command" {
+		help.WriteString(summary)
+		help.WriteString("\n\n")
 	}
 	
-	help := d.Summary()
-	if help != "Directory command" {
-		help = help + "\n\n" + usage
+	// For top-level command, show full CLI format
+	if len(d.names) == 0 {
+		help.WriteString(fmt.Sprintf("Usage: %s [OPTIONS] [commands_with_args]...\n\n", d.config.Name))
+		help.WriteString("Arguments:\n")
+		help.WriteString("  [commands_with_args]...\n\n")
+		help.WriteString("Options:\n")
+		help.WriteString("      --usage                  Print usage\n")
+		help.WriteString("  -h, --help                   Print help\n")
+		help.WriteString("      --completions            Print completions\n")
+		help.WriteString("      --validate               Validate subcommand\n")
+		help.WriteString("      --commands               Print subcommands\n")
+		help.WriteString("      --extension <extension>  Filter subcommands by extension\n\n")
 	} else {
-		help = usage
+		// Regular directory command format
+		usage, err := d.Usage()
+		if err != nil {
+			return "", err
+		}
+		help.WriteString(usage)
+		help.WriteString("\n\nArguments:\n")
+		help.WriteString("  [commands_with_args]...\n\n")
+		help.WriteString("Options:\n")
+		help.WriteString("  -h, --help  Print help\n\n")
 	}
 	
 	// Try to get extended help from README
 	readmePath := filepath.Join(d.path, "README")
 	if info, err := extractUsageFromFile(readmePath); err == nil && info.Help != "" {
-		help += "\n\nArguments:\n  [commands_with_args]...\n\nOptions:\n  -h, --help  Print help\n\n" + info.Help
-	}
-	
-	help += "\n\nAvailable subcommands:\n"
-	for _, sub := range d.Subcommands() {
-		summary := sub.Summary()
-		if summary != "" && summary != "Directory command" {
-			help += fmt.Sprintf("    %-12s %s\n", sub.Name(), summary)
-		} else {
-			help += fmt.Sprintf("    %s\n", sub.Name())
+		// Clean up help text (remove completion markers)
+		lines := strings.Split(info.Help, "\n")
+		var helpLines []string
+		for _, line := range lines {
+			if !strings.HasPrefix(strings.TrimSpace(line), "COMPLETION:") {
+				helpLines = append(helpLines, strings.TrimSpace(line))
+			}
+		}
+		if len(helpLines) > 0 {
+			help.WriteString(strings.Join(helpLines, "\n\n") + "\n\n")
 		}
 	}
 	
-	return help, nil
+	help.WriteString("Available subcommands:\n")
+	for _, sub := range d.Subcommands() {
+		summary := sub.Summary()
+		if summary != "" && summary != "Directory command" {
+			help.WriteString(fmt.Sprintf("    %-12s %s\n", sub.Name(), summary))
+		} else {
+			help.WriteString(fmt.Sprintf("    %s\n", sub.Name()))
+		}
+	}
+	
+	return help.String(), nil
 }
 
 func (d *DirectoryCommand) Subcommands() []Command {
@@ -905,17 +958,92 @@ func (f *FileCommand) Usage() (string, error) {
 }
 
 func (f *FileCommand) Help() (string, error) {
+	var help strings.Builder
+	
+	// Add summary if available
+	if f.usageInfo != nil && f.usageInfo.Summary != "" {
+		help.WriteString(f.usageInfo.Summary)
+		help.WriteString("\n\n")
+	}
+	
+	// Add usage
 	usage, err := f.Usage()
 	if err != nil {
 		return "", err
 	}
+	help.WriteString(usage)
+	help.WriteString("\n")
 	
-	help := usage
-	if f.usageInfo != nil && f.usageInfo.Help != "" {
-		help += "\n\n" + f.usageInfo.Help
+	// Add arguments section 
+	hasArgs := false
+	if f.usageInfo != nil && len(f.usageInfo.Args) > 0 {
+		help.WriteString("\nArguments:\n")
+		
+		// Show positional arguments
+		for _, spec := range f.usageInfo.Args {
+			if spec.Type == "positional" {
+				hasArgs = true
+				if spec.Required {
+					help.WriteString(fmt.Sprintf("  <%s>", spec.Name))
+				} else {
+					help.WriteString(fmt.Sprintf("  [%s]", spec.Name))
+				}
+				
+				// Look for description in stored options
+				if f.usageInfo.Help != "" {
+					lines := strings.Split(f.usageInfo.Help, "\n")
+					for _, line := range lines {
+						if strings.HasPrefix(line, "OPTION:"+spec.Name+":") {
+							desc := strings.TrimPrefix(line, "OPTION:"+spec.Name+":")
+							help.WriteString("  " + desc)
+							break
+						}
+					}
+				}
+				help.WriteString("\n")
+			} else if spec.Type == "rest" {
+				hasArgs = true
+				help.WriteString(fmt.Sprintf("  [%s]...\n", spec.Name))
+			}
+		}
 	}
 	
-	return help, nil
+	// For commands without specific args, still show [args]... if no usage defined
+	if !hasArgs {
+		help.WriteString("\nArguments:\n")
+		help.WriteString("  [args]...  other arguments\n") // Add default description
+	}
+	
+	// Add options section
+	help.WriteString("\nOptions:\n")
+	help.WriteString("  -h, --help  Print help\n")
+	
+	// Add extended help text (excluding options lines and completion lines)
+	if f.usageInfo != nil && f.usageInfo.Help != "" {
+		lines := strings.Split(f.usageInfo.Help, "\n")
+		var helpLines []string
+		
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			// Skip completion lines and option description lines
+			if strings.HasPrefix(trimmed, "COMPLETION:") || 
+			   strings.HasPrefix(trimmed, "OPTION:") {
+				continue
+			}
+			if trimmed != "" && 
+			   !strings.HasPrefix(trimmed, "Summary:") &&
+			   !strings.HasPrefix(trimmed, "Usage:") &&
+			   !strings.HasPrefix(trimmed, "Options:") {
+				helpLines = append(helpLines, trimmed)
+			}
+		}
+		
+		if len(helpLines) > 0 {
+			help.WriteString("\n" + strings.Join(helpLines, "\n\n"))
+		}
+	}
+	
+	return help.String(), nil
 }
 
 func (f *FileCommand) Subcommands() []Command {
@@ -1093,7 +1221,11 @@ func (f *FileCommand) Validate() []ValidationError {
 func handleError(config *Config, err error, silent bool) {
 	if !silent {
 		if subErr, ok := err.(SubError); ok {
-			fmt.Fprintf(os.Stderr, "%s\n", subErr.Message)
+			if subErr.Type != "" {
+				fmt.Fprintf(os.Stderr, "%s: %s\n", subErr.Type, subErr.Message)
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n", subErr.Message)
+			}
 		} else {
 			// Don't add prefix if error already starts with config.Name
 			errMsg := err.Error()
