@@ -4,15 +4,15 @@ integration: build test
 
 .PHONY: build
 build:
-	cargo build
+	go build -o sub main.go
 
 .PHONY: test
 test:
-	cargo test
+	go test ./...
 
 .PHONY: install
 install:
-	cargo install --path . --force
+	go install .
 
 .PHONY: record
 record:
