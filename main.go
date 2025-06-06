@@ -377,6 +377,21 @@ func extractUsageFromFile(path string) (*UsageInfo, error) {
 			} else if strings.HasPrefix(line, "Usage:") {
 				info.Usage = strings.TrimSpace(line[6:])
 				info.Args = parseUsageString(info.Usage)
+			} else if strings.HasPrefix(line, "Options:") {
+				// Parse options section for completion info
+				continue
+			} else if strings.Contains(line, "(`") && strings.Contains(line, "`)") {
+				// Parse backtick completion: option (`echo itworks`): Description
+				start := strings.Index(line, "(`")
+				end := strings.Index(line, "`)")
+				if start != -1 && end > start {
+					completion := line[start+2 : end]
+					// Store this completion command for later use
+					if info.Help != "" {
+						info.Help += "\n"
+					}
+					info.Help += "COMPLETION:" + completion
+				}
 			} else if line != "" {
 				// Extended help text
 				if info.Help != "" {
@@ -908,16 +923,56 @@ func (f *FileCommand) Subcommands() []Command {
 }
 
 func (f *FileCommand) Completions() (int, error) {
+	// Check for backtick completions in the help text first
+	if f.usageInfo != nil && strings.Contains(f.usageInfo.Help, "COMPLETION:") {
+		lines := strings.Split(f.usageInfo.Help, "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(line, "COMPLETION:") {
+				completion := strings.TrimPrefix(line, "COMPLETION:")
+				cmd := exec.Command("bash", "-c", completion)
+				output, err := cmd.Output()
+				if err == nil {
+					fmt.Print(string(output))
+					return 0, nil
+				}
+			}
+		}
+	}
+	
+	// Try the old style completion first (--complete flag)
+	cmd := exec.Command(f.path, "--complete")
+	output, err := cmd.Output()
+	if err == nil && len(output) > 0 {
+		fmt.Print(string(output))
+		return 0, nil
+	}
+	
 	// Check if the script supports completions by executing it with special environment
-	cmd := exec.Command(f.path)
+	cmd = exec.Command(f.path)
 	env := os.Environ()
 	env = append(env, fmt.Sprintf("_%s_COMPLETE", strings.ToUpper(f.config.Name))+"=true")
-	if len(f.args) > 0 {
-		env = append(env, fmt.Sprintf("_%s_COMPLETE_ARG", strings.ToUpper(f.config.Name))+"="+f.args[0])
+	
+	// Determine which argument position we're completing
+	// For now, use a simple logic: if no args provided, complete first arg
+	// If one arg provided, complete second arg, etc.
+	if f.usageInfo != nil && len(f.usageInfo.Args) > 0 {
+		argPosition := len(f.args)
+		positionalArgs := []ArgSpec{}
+		for _, spec := range f.usageInfo.Args {
+			if spec.Type == "positional" {
+				positionalArgs = append(positionalArgs, spec)
+			}
+		}
+		
+		if argPosition < len(positionalArgs) {
+			argName := positionalArgs[argPosition].Name
+			env = append(env, fmt.Sprintf("_%s_COMPLETE_ARG", strings.ToUpper(f.config.Name))+"="+argName)
+		}
 	}
+	
 	cmd.Env = env
 	
-	output, err := cmd.Output()
+	output, err = cmd.Output()
 	if err != nil {
 		return 0, nil // No completions available
 	}
