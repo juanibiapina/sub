@@ -1,11 +1,5 @@
-new_window "editor"
-run_cmd "$EDITOR"
-
-new_window
-run_cmd "g s"
-
-new_window "sub"
+default_windows
+new_window "test"
 run_cmd "watchexec make test"
 split_h
 run_cmd "watchexec make"
-moveto "runner"
