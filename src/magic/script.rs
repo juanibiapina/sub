@@ -6,7 +6,7 @@ use super::help_parser::{extract_docs, provides_completions};
 use super::metadata::Metadata;
 use super::usage_parser::{parse_usage_line, UsageLang};
 use super::option_parser::{parse_option_line, OptionSpec};
-use super::completion::{CompletionInfo, CompletionType};
+use super::completion::CompletionInfo;
 
 #[derive(Debug, Clone)]
 pub struct Script {
