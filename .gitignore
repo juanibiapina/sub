@@ -1,3 +1,4 @@
 /result
 /target
 **/*.rs.bk
+/tmp/
