@@ -5,3 +5,4 @@ mod usage;
 pub mod error;
 pub mod config;
 pub mod commands;
+pub mod magic;
