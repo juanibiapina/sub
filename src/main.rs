@@ -279,7 +279,7 @@ fn parse_sub_cli_args() -> (Config, Vec<String>) {
 
     let config = Config::new(args.name, root, args.color, args.infer_long_arguments);
 
-    return (config, args.cliargs);
+    (config, args.cliargs)
 }
 
 fn absolute_path(s: &str) -> Result<PathBuf, String> {

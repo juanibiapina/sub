@@ -23,13 +23,13 @@ impl<'a> FileCommand<'a> {
 
         let usage = usage::extract_usage(config, &path, &cmd);
 
-        return Self {
+        Self {
             names,
             path,
             usage,
             args,
             config,
-        };
+        }
     }
 }
 
@@ -55,8 +55,7 @@ impl<'a> Command for FileCommand<'a> {
     }
 
     fn subcommands(&self) -> Vec<Box<dyn Command + '_>> {
-        let subcommands = Vec::new();
-        return subcommands;
+        Vec::new()
     }
 
     fn completions(&self) -> Result<i32> {
