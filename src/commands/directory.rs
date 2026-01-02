@@ -170,4 +170,8 @@ impl<'a> Command for DirectoryCommand<'a> {
 
         errors
     }
+
+    fn path(&self) -> Option<PathBuf> {
+        None
+    }
 }

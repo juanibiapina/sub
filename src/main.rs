@@ -75,6 +75,37 @@ fn main() {
                 exit(1);
             }
         }
+        UserCliMode::Edit => {
+            let editor = std::env::var("VISUAL")
+                .or_else(|_| std::env::var("EDITOR"))
+                .unwrap_or_else(|_| {
+                    println!("{}: no editor configured. Set $VISUAL or $EDITOR", config.name);
+                    exit(1);
+                });
+
+            let script_path = match subcommand.path() {
+                Some(path) => path,
+                None => {
+                    println!("{}: cannot edit a directory", config.name);
+                    exit(1);
+                }
+            };
+
+            let mut parts = editor.split_whitespace();
+            let cmd = parts.next().unwrap();
+            let args: Vec<&str> = parts.collect();
+
+            let status = std::process::Command::new(cmd)
+                .args(&args)
+                .arg(&script_path)
+                .status()
+                .unwrap_or_else(|e| {
+                    println!("{}: failed to run editor: {}", config.name, e);
+                    exit(1);
+                });
+
+            exit(status.code().unwrap_or(1));
+        }
     }
 }
 
@@ -211,6 +242,7 @@ enum UserCliMode {
     Commands(Option<String>),
     Completions,
     Validate,
+    Edit,
 }
 
 struct UserCliArgs {
@@ -244,6 +276,8 @@ fn parse_user_cli_args(config: &Config, cliargs: Vec<String>) -> UserCliArgs {
             .unwrap_or(false)
         {
             UserCliMode::Completions
+        } else if args.get_one::<bool>("edit").cloned().unwrap_or(false) {
+            UserCliMode::Edit
         } else {
             UserCliMode::Invoke
         },

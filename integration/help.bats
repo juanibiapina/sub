@@ -17,7 +17,7 @@ load test_helper
   run main --help
 
   assert_success
-  assert_output "Top level command summary
+  assert_output 'Top level command summary
 
 Usage: main [OPTIONS] [commands_with_args]...
 
@@ -29,6 +29,7 @@ Options:
   -h, --help                   Print help
       --completions            Print completions
       --validate               Validate subcommand
+  -e, --edit                   Edit command in $VISUAL or $EDITOR
       --commands               Print subcommands
       --extension <extension>  Filter subcommands by extension
 
@@ -41,7 +42,7 @@ Available subcommands:
     b                
     c.other          
     invalid-usage    
-    nested           "
+    nested           '
 }
 
 @test "help: displays usage for a non documented command" {

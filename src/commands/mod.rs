@@ -19,6 +19,7 @@ pub trait Command {
     fn invoke(&self) -> Result<i32>;
     fn help(&self) -> Result<String>;
     fn validate(&self) -> Vec<(PathBuf, Error)>;
+    fn path(&self) -> Option<PathBuf>;
 }
 
 pub fn subcommand(config: &Config, mut cliargs: Vec<String>) -> Result<Box<dyn Command + '_>> {
