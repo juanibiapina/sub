@@ -6,6 +6,10 @@ integration: build test
 build:
 	cargo build
 
+.PHONY: lint
+lint:
+	cargo clippy -- -D warnings
+
 .PHONY: test
 test:
 	cargo test
