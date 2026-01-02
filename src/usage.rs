@@ -74,11 +74,11 @@ fn usage_parser() -> impl Parser<char, UsageLang, Error = Simple<char>> {
         .collect();
     let value = filter(|c: &char| c.is_ascii_alphabetic() && c.is_uppercase()).repeated().at_least(1).map(|v| v.into_iter().collect::<String>());
 
-    let short = just("-").ignore_then(filter(|c: &char| c.is_alphabetic())).padded().map(|c| ArgBase::Short(c));
+    let short = just("-").ignore_then(filter(|c: &char| c.is_alphabetic())).padded().map(ArgBase::Short);
     let long = just("--").ignore_then(ident).then(just('=').ignore_then(value).or_not()).padded().map(|(k, v)| ArgBase::Long(k, v));
 
-    let optional_positional = ident.padded().map(|s| ArgBase::Positional(s));
-    let required_positional = just('<').ignore_then(ident).then_ignore(just('>')).padded().map(|s| ArgBase::Positional(s));
+    let optional_positional = ident.padded().map(ArgBase::Positional);
+    let required_positional = just('<').ignore_then(ident).then_ignore(just('>')).padded().map(ArgBase::Positional);
 
     let in_optional = short.or(long).or(optional_positional);
     let in_required = short.or(long).or(required_positional);
@@ -190,22 +190,16 @@ impl Usage {
                 let mut result = None;
 
                 for (k, v) in e.context() {
-                    match k {
-                        ContextKind::InvalidArg => {
-                            match v {
-                                ContextValue::Strings(args) => {
-                                    for arg in args {
-                                        // look for first positional argument that's missing
-                                        if arg.starts_with("<") && arg.ends_with(">") {
-                                            result = Some(arg.trim_matches(|c| c == '<' || c == '>').to_owned());
-                                            break;
-                                        }
-                                    }
-                                },
-                                _ => {},
+                    if k == ContextKind::InvalidArg {
+                        if let ContextValue::Strings(args) = v {
+                            for arg in args {
+                                // look for first positional argument that's missing
+                                if arg.starts_with("<") && arg.ends_with(">") {
+                                    result = Some(arg.trim_matches(|c| c == '<' || c == '>').to_owned());
+                                    break;
+                                }
                             }
                         }
-                        _ => {},
                     }
                 }
 
@@ -240,7 +234,7 @@ impl Usage {
 }
 
 pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
-    let docs = parser::extract_docs(&path);
+    let docs = parser::extract_docs(path);
 
     let mut command = config.base_command(cmd).no_binary_name(true);
 
@@ -278,16 +272,12 @@ pub fn extract_usage(config: &Config, path: &Path, cmd: &str) -> Usage {
     }
 
     let completions: HashMap<String, CompletionType> = options.iter().filter_map(|(name, spec)| {
-        if let Some(completion_type) = &spec.completion_type {
-            Some((name.clone(), completion_type.clone()))
-        } else {
-            None
-        }
+        spec.completion_type.as_ref().map(|completion_type| (name.clone(), completion_type.clone()))
     }).collect();
 
     // both command and error are returned because an invalid usage string doesn't prevent the
     // command from being invoked, but it should be reported to the user
-    return Usage::new(command, completions, error);
+    Usage::new(command, completions, error)
 }
 
 fn apply_arguments(mut command: Command, usage_lang: UsageLang, options: &HashMap<String, OptionSpec>) -> Command {
