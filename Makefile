@@ -1,5 +1,5 @@
 .PHONY: integration
-integration: build test
+integration: build test lint
 	./integration/vendor/bats/bin/bats integration
 
 # Find LLVM tools - check common locations (can override with LLVM_BIN=/path/to/bin)

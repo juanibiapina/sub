@@ -15,7 +15,7 @@ jobs:
       with:
           toolchain: stable
           override: true
-    - name: Clippy
-      run: cargo clippy -- -D warnings
+    - name: Run linter
+      run: make lint
     - name: Run tests
       run: make integration
