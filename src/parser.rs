@@ -60,7 +60,7 @@ pub fn extract_docs(path: &Path) -> Docs {
                 continue;
             }
 
-            if let Some(caps) = SUMMARY_RE.captures(&line) {
+            if let Some(caps) = SUMMARY_RE.captures(line) {
                 if let Some(m) = caps.get(1) {
                     summary = Some(m.as_str().trim().to_owned());
                     continue;
@@ -77,7 +77,7 @@ pub fn extract_docs(path: &Path) -> Docs {
                 continue;
             }
 
-            if let Some(caps) = EXTENDED_RE.captures(&line) {
+            if let Some(caps) = EXTENDED_RE.captures(line) {
                 if let Some(m) = caps.get(1) {
                     description.push(m.as_str().trim().to_owned());
                     mode = Mode::Description;
@@ -91,7 +91,7 @@ pub fn extract_docs(path: &Path) -> Docs {
                 mode = Mode::Out;
             }
 
-            if let Some(caps) = INDENTED_RE.captures(&line) {
+            if let Some(caps) = INDENTED_RE.captures(line) {
                 if let Some(m) = caps.get(1) {
                     options.push(m.as_str().trim().to_owned());
                     continue;
@@ -105,7 +105,7 @@ pub fn extract_docs(path: &Path) -> Docs {
                 continue;
             }
 
-            if let Some(caps) = EXTENDED_RE.captures(&line) {
+            if let Some(caps) = EXTENDED_RE.captures(line) {
                 if let Some(m) = caps.get(1) {
                     description.push(m.as_str().trim().to_owned());
                     continue;

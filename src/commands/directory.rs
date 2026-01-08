@@ -38,12 +38,12 @@ impl<'a> DirectoryCommand<'a> {
 
         let usage = Usage::new(command, HashMap::new(), None);
 
-        return Self {
+        Self {
             names,
             path,
             usage,
             config,
-        };
+        }
     }
 
     pub fn new(name: &str, names: Vec<String>, path: PathBuf, config: &'a Config) -> Self {
@@ -66,12 +66,12 @@ impl<'a> DirectoryCommand<'a> {
 
         let usage = Usage::new(command, HashMap::new(), None);
 
-        return Self {
+        Self {
             names,
             path,
             usage,
             config,
-        };
+        }
     }
 }
 
@@ -138,7 +138,7 @@ impl<'a> Command for DirectoryCommand<'a> {
 
         subcommands.sort_by(|c1, c2| c1.name().cmp(c2.name()));
 
-        return subcommands;
+        subcommands
     }
 
     fn completions(&self) -> Result<i32> {

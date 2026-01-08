@@ -54,7 +54,7 @@ impl Config {
     pub fn libexec_path(&self) -> PathBuf {
         let mut path = self.root.clone();
         path.push("libexec");
-        return path;
+        path
     }
 
     pub fn base_command(&self, name: &str) -> Command {
