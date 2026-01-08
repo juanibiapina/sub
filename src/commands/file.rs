@@ -153,4 +153,8 @@ impl<'a> Command for FileCommand<'a> {
             Err(e) => vec![(self.path.clone(), e)],
         }
     }
+
+    fn path(&self) -> Option<PathBuf> {
+        Some(self.path.clone())
+    }
 }
