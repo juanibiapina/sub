@@ -1,6 +1,6 @@
 .PHONY: integration
 integration: build test
-	bats integration
+	./integration/vendor/bats/bin/bats integration
 
 # Find LLVM tools - check common locations (can override with LLVM_BIN=/path/to/bin)
 LLVM_BIN ?= $(shell \
@@ -26,7 +26,7 @@ ifndef LLVM_BIN
 endif
 	RUSTFLAGS="-C instrument-coverage" cargo build
 	rm -f *.profraw
-	-LLVM_PROFILE_FILE="sub-%p-%m.profraw" bats integration/
+	-LLVM_PROFILE_FILE="sub-%p-%m.profraw" ./integration/vendor/bats/bin/bats integration/
 	$(LLVM_BIN)/llvm-profdata merge -sparse *.profraw -o sub.profdata
 	$(LLVM_BIN)/llvm-cov report ./target/debug/sub --instr-profile=sub.profdata --ignore-filename-regex='/.cargo/registry|rustc'
 	rm -f *.profraw sub.profdata

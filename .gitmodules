@@ -1,6 +1,9 @@
+[submodule "integration/vendor/bats"]
+	path = integration/vendor/bats
+	url = https://github.com/bats-core/bats-core.git
 [submodule "integration/vendor/bats-support"]
 	path = integration/vendor/bats-support
-	url = https://github.com/ztombol/bats-support
+	url = https://github.com/bats-core/bats-support.git
 [submodule "integration/vendor/bats-assert"]
 	path = integration/vendor/bats-assert
-	url = https://github.com/ztombol/bats-assert
+	url = https://github.com/bats-core/bats-assert.git

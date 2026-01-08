@@ -15,9 +15,7 @@ jobs:
       with:
           toolchain: stable
           override: true
-    - name: Install bats
-      run: git clone --depth 1 https://github.com/sstephenson/bats.git
     - name: Clippy
       run: cargo clippy -- -D warnings
     - name: Run tests
-      run: PATH="./bats/bin:$PATH" make integration
+      run: make integration
