@@ -11,10 +11,7 @@ jobs:
       with:
         submodules: recursive
     - name: Install rust stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          override: true
+      uses: dtolnay/rust-toolchain@stable
     - name: Run linter
       run: make lint
     - name: Run tests
