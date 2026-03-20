@@ -24,11 +24,9 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Install rust stable
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-          toolchain: stable
-          override: true
-          target: x86_64-unknown-linux-gnu
+          targets: x86_64-unknown-linux-gnu
     - name: Create Artifact
       run: |
         cargo build --target x86_64-unknown-linux-gnu --release
@@ -50,11 +48,9 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Install rust stable
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-          toolchain: stable
-          override: true
-          target: aarch64-apple-darwin
+          targets: aarch64-apple-darwin
     - name: Create Artifact
       run: |
         cargo build --target aarch64-apple-darwin --release
