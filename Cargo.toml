@@ -1,6 +1,6 @@
 [package]
 name = "sub"
-version = "2.3.0"
+version = "2.3.1"
 description = "Dynamically generate rich CLIs from scripts."
 authors = ["Juan Ibiapina <juanibiapina@gmail.com>"]
 edition = "2021"

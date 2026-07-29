@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -e
+
+declare -A args="($_MAIN_ARGS)"
+
+echo "args=${args[args]}"

@@ -134,6 +134,38 @@ mod tests {
             rest: Some("rest".to_owned()),
         });
     }
+
+    #[test]
+    fn shell_quote_wraps_values_in_single_quotes() {
+        assert_eq!(shell_quote(""), "''");
+        assert_eq!(shell_quote("plain"), "'plain'");
+        assert_eq!(shell_quote("with space"), "'with space'");
+    }
+
+    #[test]
+    fn shell_quote_escapes_single_quotes() {
+        assert_eq!(shell_quote("it's"), r"'it'\''s'");
+        assert_eq!(shell_quote("'"), r"''\'''");
+    }
+
+    #[test]
+    fn shell_quote_leaves_other_metacharacters_untouched() {
+        assert_eq!(shell_quote("a\"b"), "'a\"b'");
+        assert_eq!(shell_quote("$HOME ${x} $(id)"), "'$HOME ${x} $(id)'");
+        assert_eq!(shell_quote("`id`"), "'`id`'");
+        assert_eq!(shell_quote(r"a\b"), r"'a\b'");
+        assert_eq!(shell_quote("a\nb"), "'a\nb'");
+        assert_eq!(shell_quote("*"), "'*'");
+        assert_eq!(shell_quote("-x"), "'-x'");
+        assert_eq!(shell_quote("[k]=v"), "'[k]=v'");
+    }
+}
+
+/// Quotes a string so that a shell re-parsing it (as bash does for
+/// `declare -A args="($_NAME_ARGS)"`) recovers the original bytes exactly,
+/// with no expansion, substitution, splitting or globbing.
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
 }
 
 pub struct Usage {
@@ -217,7 +249,7 @@ impl Usage {
 
         for arg in self.command.get_arguments() {
             if let Some(values) = clap_args.get_raw(arg.get_id().as_str()) {
-                args_parts.push(arg.get_id().to_string());
+                args_parts.push(shell_quote(arg.get_id().as_str()));
 
                 let mut value_parts = Vec::new();
 
@@ -225,7 +257,7 @@ impl Usage {
                     value_parts.push(v.to_str().ok_or(Error::InvalidUTF8)?.to_string());
                 }
 
-                args_parts.push(format!("\"{}\"", value_parts.join(" ")));
+                args_parts.push(shell_quote(&value_parts.join(" ")));
             }
         }
 

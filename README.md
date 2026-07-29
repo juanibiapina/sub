@@ -27,6 +27,7 @@ completions.
 * [Documenting commands](#documenting-commands)
 * [Validating arguments](#validating-arguments)
 * [Parsing arguments](#parsing-arguments)
+* [Raw arguments](#raw-arguments)
 * [Completions](#completions)
 * [Nested subcommands](#nested-subcommands)
 * [Aliases](#aliases)
@@ -308,6 +309,25 @@ if [[ "${args[long]}" == "true" ]]; then
   # ...
 fi
 ```
+
+Every key and value in the variable is single quoted, so any argument value is
+safe to read this way. Quotes, `$`, backticks, newlines and globs are passed
+through literally and are never expanded or executed by the shell.
+
+Two things to keep in mind:
+
+- The idiom requires **bash 5.1 or later**. On bash 4.x it silently produces an
+  empty array, bash 5.0 errors, and zsh cannot use it at all.
+- Arguments that accept multiple values (`[rest]...`, and the default `args`
+  when a script has no `Usage` comment) are joined with a single space, so
+  element boundaries are lost. Use `"$@"` when boundaries matter.
+
+## Raw arguments
+
+Scripts always receive the original command line arguments unchanged, in the
+original order, as `"$@"`. `sub` runs the script directly, without a shell, and
+never rewrites argument values. Argument validation from the `Usage` comment
+still happens first, so a script only runs when its arguments are valid.
 
 ## Completions
 

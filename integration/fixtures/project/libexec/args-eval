@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Usage: {cmd} <name> [opt] [--title=TITLE] [rest]...
+
+set -e
+
+declare -A args="($_MAIN_ARGS)"
+
+echo "name=${args[name]}"
+echo "opt=${args[opt]}"
+echo "title=${args[title]}"
+echo "rest=${args[rest]}"

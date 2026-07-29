@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.3.1 - 29.07.2026
+
+- Security fix: argument values in `_<NAME>_ARGS` are now single quoted. Until
+  now, reading them with the documented `declare -A args="($_MAIN_ARGS)"` idiom
+  let the shell expand and execute whatever an argument value contained, so
+  `mycli greet 'x"$(rm -rf ~)"y'` ran the command substitution. All versions
+  from v2.0.0 to v2.3.0 are affected. Values with quotes, `$`, backticks,
+  newlines or globs now reach scripts literally, and a value can no longer
+  fabricate array keys the caller never passed.
+- No script changes are needed. Values that worked before produce the same
+  array contents. Only code that parses the raw variable expecting double
+  quotes needs updating.
+
 ## v2.3.0 - 20.06.2024
 
 - Add support for literal commands in completions
